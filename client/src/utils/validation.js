@@ -32,7 +32,17 @@ export function validateName(name, label = 'your full name') {
 export function validatePhone(phone, { required = false } = {}) {
   const digits = phone.replace(/[\s()-]/g, '')
   if (!digits) return required ? 'Enter your mobile number.' : ''
-  if (!INDIAN_MOBILE_PATTERN.test(digits)) return 'Enter a 10-digit Indian mobile number starting with 6–9, like +91 98200 12345.'
+  if (!INDIAN_MOBILE_PATTERN.test(digits)) return 'Enter a 10-digit mobile number starting with 6–9, like +91 98200 12345.'
+  return ''
+}
+
+// Free text that must contain letters, e.g. a degree or college name
+export function validateText(text, { required = false, label = 'this field', min = 2, max = 100 } = {}) {
+  const value = text.trim()
+  if (!value) return required ? `Enter ${label}.` : ''
+  if (!/[A-Za-z]/.test(value)) return 'Use letters, not only numbers or symbols.'
+  if (value.length < min) return `Must be at least ${min} characters.`
+  if (value.length > max) return `Must be ${max} characters or fewer.`
   return ''
 }
 
@@ -59,18 +69,23 @@ export function validatePastYear(year) {
   return Number(year) > currentYear() ? 'This year has not happened yet.' : ''
 }
 
-// CGPA out of 10 (or "/ 4") or percentage out of 100, e.g. "CGPA 8.4 / 10", "8.4", "78%"
+// CGPA is out of 10 (or 4); a percentage must say so with %.
+// Accepts "8.4", "CGPA 8.4", "8.4 / 10", "3.5 / 4", "78%", "78.5 percent".
+const SCORE_PATTERN = /^(?:(?:cgpa|sgpa|cpi|gpa|percentage)\s*:?\s*)?(\d{1,3}(?:\.\d{1,2})?)\s*(?:(%|percent(?:age)?)|\/\s*(\d{1,2}))?(?:\s*(?:cgpa|sgpa|cpi|gpa))?$/i
+
 export function validateScore(score) {
   const value = score.trim()
   if (!value) return ''
-  const match = value.match(/(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?/)
-  if (!match) return 'Enter a CGPA like 8.4 / 10 or a percentage like 78%.'
+  const match = value.match(SCORE_PATTERN)
+  if (!match) return 'Enter a CGPA like 8.4 or 8.4 / 10, or a percentage like 78%.'
   const number = Number(match[1])
-  const outOf = match[2] ? Number(match[2]) : null
-  const isPercent = /%|percent/i.test(value) || (!outOf && !/cgpa|gpa|sgpa|cpi/i.test(value) && number > 10)
-  if (outOf !== null) return number <= outOf ? '' : `Score cannot be more than ${outOf}.`
-  if (isPercent) return number <= 100 ? '' : 'Percentage cannot be more than 100.'
-  return number <= 10 ? '' : 'CGPA cannot be more than 10.'
+  const isPercent = Boolean(match[2])
+  const outOf = match[3] ? Number(match[3]) : 10
+  if (number <= 0) return 'Score must be more than 0.'
+  if (isPercent) return number <= 100 ? '' : 'Percentage cannot be more than 100%.'
+  if (outOf !== 10 && outOf !== 4) return 'CGPA is out of 10 (or 4). Enter it like 8.4 / 10.'
+  if (number > outOf) return outOf === 10 && number <= 100 ? 'CGPA is out of 10. If this is a percentage, add %, like 78%.' : `CGPA cannot be more than ${outOf}.`
+  return ''
 }
 
 export function validateLinkedIn(link) {
@@ -165,7 +180,9 @@ export function validatePasswordChange({ currentPassword, newPassword, confirmPa
 // Create wizard, step 3
 export function validateBasicsForm(basics) {
   return {
-    ...validateRequiredFields(basics, { degree: 'your degree', institution: 'your college' }),
+    degree: validateText(basics.degree, { required: true, label: 'your degree' }),
+    institution: validateText(basics.institution, { required: true, label: 'your college', min: 3 }),
+    lastCompany: validateText(basics.lastCompany || '', { max: 80 }),
     fullName: validateName(basics.fullName),
     email: validateEmail(basics.email),
     phone: validatePhone(basics.phone, { required: true }),

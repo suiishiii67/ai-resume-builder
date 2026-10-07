@@ -19,9 +19,15 @@ function ChangePasswordForm() {
   const [isSaving, setIsSaving] = useState(false)
 
   const handleChange = (event) => {
-    setFormValues({ ...formValues, [event.target.name]: event.target.value })
-    setErrors({ ...errors, [event.target.name]: '' })
+    const { name, value } = event.target
+    const newValues = { ...formValues, [name]: value }
+    setFormValues(newValues)
+    // While typing, re-check only a field that already shows an error
+    if (errors[name]) setErrors({ ...errors, [name]: validatePasswordChange(newValues)[name] })
   }
+
+  // Check a field when the user leaves it
+  const handleBlur = (event) => setErrors({ ...errors, [event.target.name]: validatePasswordChange(formValues)[event.target.name] })
 
   const handleChangePassword = async (event) => {
     event.preventDefault()
@@ -46,9 +52,9 @@ function ChangePasswordForm() {
       <h2 className="mb-4 text-xl font-bold">Change password</h2>
       <FormAlert message={formError} />
       <div className="grid gap-4 sm:grid-cols-2">
-        <PasswordInput id="current-password" name="currentPassword" label="Current password" autoComplete="current-password" value={formValues.currentPassword} onChange={handleChange} error={errors.currentPassword} className="sm:col-span-2" required />
-        <PasswordInput id="new-password" name="newPassword" label="New password" autoComplete="new-password" hint={PASSWORD_HINT} value={formValues.newPassword} onChange={handleChange} error={errors.newPassword} required />
-        <PasswordInput id="confirm-new-password" name="confirmPassword" label="Confirm new password" autoComplete="new-password" value={formValues.confirmPassword} onChange={handleChange} error={errors.confirmPassword} required />
+        <PasswordInput id="current-password" name="currentPassword" label="Current password" autoComplete="current-password" value={formValues.currentPassword} onChange={handleChange} onBlur={handleBlur} error={errors.currentPassword} className="sm:col-span-2" required />
+        <PasswordInput id="new-password" name="newPassword" label="New password" autoComplete="new-password" hint={PASSWORD_HINT} value={formValues.newPassword} onChange={handleChange} onBlur={handleBlur} error={errors.newPassword} required />
+        <PasswordInput id="confirm-new-password" name="confirmPassword" label="Confirm new password" autoComplete="new-password" value={formValues.confirmPassword} onChange={handleChange} onBlur={handleBlur} error={errors.confirmPassword} required />
       </div>
       <Button type="submit" className="mt-5" loading={isSaving}>
         Change password

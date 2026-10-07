@@ -8,9 +8,9 @@ const EXPERIENCE_OPTIONS = [
   { value: 'experienced', label: '1–2 years of work experience' },
 ]
 
-function StepBasics({ basics, onChange, errors }) {
+function StepBasics({ basics, onChange, onBlur, errors }) {
   const field = (name, label, extra = {}) => (
-    <Input id={`basics-${name}`} name={name} label={label} value={basics[name]} onChange={onChange} error={errors[name]} {...extra} />
+    <Input id={`basics-${name}`} name={name} label={label} value={basics[name]} onChange={onChange} onBlur={onBlur} error={errors[name]} {...extra} />
   )
 
   return (
@@ -19,7 +19,7 @@ function StepBasics({ basics, onChange, errors }) {
         <legend className="mb-3 text-lg font-bold">Contact details</legend>
         {field('fullName', 'Full name', { required: true, autoComplete: 'name' })}
         {field('email', 'Email', { required: true, type: 'email', autoComplete: 'email' })}
-        {field('phone', 'Phone', { required: true, type: 'tel', autoComplete: 'tel', placeholder: '+91 98200 12345', hint: '10-digit Indian mobile number.' })}
+        {field('phone', 'Phone', { required: true, type: 'tel', autoComplete: 'tel', placeholder: '+91 98200 12345', hint: '10-digit mobile number.' })}
         {field('location', 'City', { placeholder: 'e.g. Pune, Maharashtra' })}
       </fieldset>
 
@@ -34,7 +34,7 @@ function StepBasics({ basics, onChange, errors }) {
       <fieldset className="grid gap-4 sm:grid-cols-2">
         <legend className="mb-3 text-lg font-bold">Experience</legend>
         <Select id="basics-experienceLevel" name="experienceLevel" label="Experience level" value={basics.experienceLevel} onChange={onChange} options={EXPERIENCE_OPTIONS} />
-        {basics.experienceLevel !== 'fresher' && field('lastCompany', 'Company / internship name', { placeholder: 'Optional' })}
+        {basics.experienceLevel !== 'fresher' && field('lastCompany', 'Company / internship name', { placeholder: 'Optional', maxLength: 80 })}
       </fieldset>
     </div>
   )

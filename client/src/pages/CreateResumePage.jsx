@@ -20,6 +20,12 @@ import StepTemplate from '../components/wizard/StepTemplate'
 import StepBasics from '../components/wizard/StepBasics'
 import GeneratingState from '../components/wizard/GeneratingState'
 
+// Stop letters being typed into number fields
+const INPUT_FILTERS = {
+  phone: (value) => value.replace(/[^\d+\s()-]/g, ''),
+  graduationYear: (value) => value.replace(/\D/g, '').slice(0, 4),
+}
+
 function CreateResumePage() {
   const { user } = useAuth()
   const { companies, roles, templates, isCatalogLoading } = useCatalog()
@@ -56,9 +62,16 @@ function CreateResumePage() {
   }
 
   const handleBasicsChange = (event) => {
-    setBasics({ ...basics, [event.target.name]: event.target.value })
-    setErrors({ ...errors, [event.target.name]: '' })
+    const { name } = event.target
+    const value = INPUT_FILTERS[name] ? INPUT_FILTERS[name](event.target.value) : event.target.value
+    const newValues = { ...basics, [name]: value }
+    setBasics(newValues)
+    // While typing, re-check only a field that already shows an error
+    if (errors[name]) setErrors({ ...errors, [name]: validateBasicsForm(newValues)[name] })
   }
+
+  // Check a field when the user leaves it
+  const handleBasicsBlur = (event) => setErrors({ ...errors, [event.target.name]: validateBasicsForm(basics)[event.target.name] })
 
   const handleGenerate = async () => {
     const basicsErrors = validateBasicsForm(basics)
@@ -97,7 +110,7 @@ function CreateResumePage() {
           <WizardProgress currentStep={step} />
           {step === 1 && <StepTarget target={target} onTargetChange={setTarget} companies={companies} roles={roles} errors={errors} company={company} role={role} templateName={templates.find((template) => template.id === company.preferredTemplate)?.name} />}
           {step === 2 && <StepTemplate templates={templates} selectedTemplateId={selectedTemplate?.id} onSelect={setChosenTemplateId} recommendedIds={recommendedIds} previewResume={previewResume} companyName={company.name} />}
-          {step === 3 && <StepBasics basics={basics} onChange={handleBasicsChange} errors={errors} />}
+          {step === 3 && <StepBasics basics={basics} onChange={handleBasicsChange} onBlur={handleBasicsBlur} errors={errors} />}
 
           <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
             {step > 1 ? (
