@@ -5,7 +5,7 @@ import { ScanSearch, ClipboardList } from 'lucide-react'
 import { useResumes } from '../context/ResumeContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useToast } from '../context/ToastContext'
-import { analyzeResume } from '../services/atsService'
+import { analyzeResume, saveAtsCheck } from '../services/atsService'
 import { resolveRole } from '../utils/targetProfile'
 import { findSkillsInText } from '../utils/jobDescription'
 import sampleJobDescriptions from '../data/sampleJobDescriptions'
@@ -66,6 +66,7 @@ function AtsCheckerPage() {
     // Keep the job description on the resume, so the editor shows its skills
     const jobDetails = jdLength ? { jobDescription: jobDescription.trim(), jobSkills: findSkillsInText(jobDescription) } : {}
     await saveScore(resume.id, newReport.score, jobDetails)
+    await saveAtsCheck({ source: 'saved', userId: resume.userId, resumeId: resume.id, score: newReport.score, jobTitle: newReport.jobTitle, hasJobDescription: newReport.hasJobDescription })
     setReport(newReport)
     setIsAnalyzing(false)
     showToast(`ATS score ${newReport.score}/100 saved to this resume.`)
