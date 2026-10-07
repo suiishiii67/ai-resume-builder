@@ -1,7 +1,7 @@
-// ATS Checker page (/ats-checker).
+// ATS Checker page (/ats-checker): check a saved resume, or upload one (quick check).
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ScanSearch, ClipboardList } from 'lucide-react'
+import { ScanSearch, ClipboardList, FileText, FileUp } from 'lucide-react'
 import { useResumes } from '../context/ResumeContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useToast } from '../context/ToastContext'
@@ -18,10 +18,12 @@ import Button from '../components/Button'
 import Spinner from '../components/Spinner'
 import TargetStrip from '../components/TargetStrip'
 import AtsResultPanel from '../components/ats/AtsResultPanel'
+import QuickCheckPanel from '../components/ats/QuickCheckPanel'
 
 const MIN_JD_LENGTH = 80
 
-function AtsCheckerPage() {
+// Option 1: check one of the user's saved resumes
+function SavedResumeCheck() {
   const { resumes, isResumesLoading, saveScore } = useResumes()
   const { roles } = useCatalog()
   const { showToast } = useToast()
@@ -36,7 +38,7 @@ function AtsCheckerPage() {
 
   if (isResumesLoading) return <PageLoader message="Loading your resumes…" />
   if (resumes.length === 0) {
-    return <EmptyState icon={<ScanSearch size={24} aria-hidden="true" />} title="No resume to check yet" description="Create a resume first, then come back to score it against a job description." action={<Button to="/create">Create a resume</Button>} />
+    return <EmptyState icon={<ScanSearch size={24} aria-hidden="true" />} title="No saved resume yet" description="Choose “Upload my resume” above to check a resume file, or create one first." action={<Button to="/dashboard">Go to my resumes</Button>} />
   }
 
   const resume = resumes.find((item) => item.id === selectedId) || resumes[0]
@@ -74,7 +76,6 @@ function AtsCheckerPage() {
 
   return (
     <>
-      <PageHeader title="ATS checker" description="Estimate how well a resume matches a job description, and see exactly what to fix." />
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <section aria-label="Resume and job description" className="space-y-4 rounded-lg border border-line bg-paper p-5 xl:sticky xl:top-6">
@@ -110,6 +111,43 @@ function AtsCheckerPage() {
           )}
         </div>
       </div>
+    </>
+  )
+}
+
+const OPTIONS = [
+  { mode: 'saved', label: 'Check one of my saved resumes', icon: FileText },
+  { mode: 'upload', label: 'Upload my resume', icon: FileUp },
+]
+
+function AtsCheckerPage() {
+  const [searchParams] = useSearchParams()
+  const [mode, setMode] = useState(searchParams.get('mode') === 'upload' ? 'upload' : 'saved')
+
+  return (
+    <>
+      <PageHeader title="ATS checker" description="Estimate how well a resume matches a job description, and see exactly what to fix." />
+
+      <div role="tablist" aria-label="What to check" className="mb-6 grid gap-2 sm:grid-cols-2">
+        {OPTIONS.map(({ mode: optionMode, label, icon: Icon }) => {
+          const isActive = mode === optionMode
+          return (
+            <button
+              key={optionMode}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setMode(optionMode)}
+              className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 text-left text-[16px] font-bold ${isActive ? 'border-ink bg-board text-ink' : 'border-line bg-paper text-ink-soft hover:border-ink-faint hover:text-ink'}`}
+            >
+              <Icon size={20} aria-hidden="true" />
+              {label}
+            </button>
+          )
+        })}
+      </div>
+
+      {mode === 'saved' ? <SavedResumeCheck /> : <QuickCheckPanel />}
     </>
   )
 }

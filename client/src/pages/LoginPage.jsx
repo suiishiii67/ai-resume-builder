@@ -88,7 +88,7 @@ function LoginPage() {
 
           <p className="mt-6 text-[15px] text-ink-soft">
             New here?{' '}
-            <Link to="/signup" className="font-semibold text-navy underline">
+            <Link to="/signup" state={location.state} className="font-semibold text-navy underline">
               Create an account
             </Link>
           </p>

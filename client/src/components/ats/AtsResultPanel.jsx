@@ -45,7 +45,7 @@ function AtsResultPanel({ report, resumeId }) {
           {report.jobTitle && (
             <p className="mt-4 text-[15px]">
               Job title “{report.jobTitle}”: {report.titleFound ? 'mentioned in your resume.' : 'not mentioned yet. '}
-              {!report.titleFound && (
+              {!report.titleFound && resumeId && (
                 <Link to={`/editor/${resumeId}?section=summary`} className="font-semibold text-navy underline">
                   Add it to your summary
                 </Link>

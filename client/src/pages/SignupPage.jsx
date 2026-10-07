@@ -1,6 +1,6 @@
 // Signup page (/signup).
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { validateSignupForm, hasErrors, PASSWORD_HINT } from '../utils/validation'
@@ -14,6 +14,7 @@ function SignupPage() {
   const { signup } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [formValues, setFormValues] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [errors, setErrors] = useState({})
@@ -42,7 +43,8 @@ function SignupPage() {
     try {
       await signup(formValues)
       showToast('Account created. Start with your target company and role.')
-      navigate('/dashboard', { replace: true })
+      // Go back to the page that asked for an account, if any
+      navigate(location.state?.from || '/dashboard', { replace: true })
     } catch (error) {
       setFormError(error.message)
       setIsSubmitting(false)
@@ -89,7 +91,7 @@ function SignupPage() {
 
           <p className="mt-6 text-[15px] text-ink-soft">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-navy underline">
+            <Link to="/login" state={location.state} className="font-semibold text-navy underline">
               Log in
             </Link>
           </p>

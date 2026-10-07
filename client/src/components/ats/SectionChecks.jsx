@@ -16,7 +16,7 @@ function SectionChecks({ checks, resumeId }) {
             {check.label}
             <span className="sr-only">{check.passed ? ': present' : ': missing'}</span>
           </span>
-          {!check.passed && (
+          {!check.passed && resumeId && (
             <Link to={`/editor/${resumeId}?section=${check.section}`} className="text-sm font-semibold text-navy underline">
               Add it
             </Link>

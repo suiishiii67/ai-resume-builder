@@ -11,6 +11,8 @@ import TemplatesPage from '../pages/TemplatesPage'
 import DashboardPage from '../pages/DashboardPage'
 import CreateResumePage from '../pages/CreateResumePage'
 import ImportResumePage from '../pages/ImportResumePage'
+import QuickCheckPage from '../pages/QuickCheckPage'
+import ContinueImportPage from '../pages/ContinueImportPage'
 import ResumeEditorPage from '../pages/ResumeEditorPage'
 import AtsCheckerPage from '../pages/AtsCheckerPage'
 import ProfilePage from '../pages/ProfilePage'
@@ -29,6 +31,7 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
+        <Route path="/quick-check" element={<QuickCheckPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 
@@ -38,6 +41,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/create" element={<CreateResumePage />} />
           <Route path="/import" element={<ImportResumePage />} />
+          <Route path="/continue-import" element={<ContinueImportPage />} />
           <Route path="/editor/:resumeId" element={<ResumeEditorPage />} />
           <Route path="/ats-checker" element={<AtsCheckerPage />} />
           <Route path="/profile" element={<ProfilePage />} />

@@ -18,12 +18,15 @@ function SuggestionList({ suggestions, resumeId }) {
             {suggestion.priority}
           </StatusStamp>
           <p className="flex-1 text-[15px] leading-relaxed">{suggestion.text}</p>
-          <Link
-            to={`/editor/${resumeId}?section=${suggestion.section}`}
-            className="inline-flex shrink-0 items-center gap-1 self-start text-sm font-semibold whitespace-nowrap text-navy underline"
-          >
-            Fix in editor <ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          {/* No saved resume yet (quick check): no editor link */}
+          {resumeId && (
+            <Link
+              to={`/editor/${resumeId}?section=${suggestion.section}`}
+              className="inline-flex shrink-0 items-center gap-1 self-start text-sm font-semibold whitespace-nowrap text-navy underline"
+            >
+              Fix in editor <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          )}
         </li>
       ))}
     </ol>
