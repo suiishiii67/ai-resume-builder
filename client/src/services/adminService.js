@@ -14,7 +14,8 @@ export async function getAdminStats() {
 
   const resumesPerCompany = {}
   resumes.forEach((resume) => {
-    resumesPerCompany[resume.companyName] = (resumesPerCompany[resume.companyName] || 0) + 1
+    const companyName = resume.companyName || 'No company yet'
+    resumesPerCompany[companyName] = (resumesPerCompany[companyName] || 0) + 1
   })
 
   return {
