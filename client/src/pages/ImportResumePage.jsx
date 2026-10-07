@@ -1,11 +1,11 @@
 // Import a resume (/import): upload a PDF/Word file or paste text, check the fields, then open the editor.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FileUp, ClipboardPaste, ArrowLeft, ArrowRight } from 'lucide-react'
+import { ClipboardPaste, ArrowLeft, ArrowRight } from 'lucide-react'
 import { useCatalog } from '../context/CatalogContext'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
-import { readResumeFile, parseResumeText, countImportedFields, MIN_TEXT_LENGTH, MAX_FILE_SIZE_MB } from '../utils/resumeImport'
+import { readResumeFile, parseResumeText, countImportedFields, MIN_TEXT_LENGTH } from '../utils/resumeImport'
 import { findResumeErrors } from '../utils/validation'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import PageHeader from '../components/PageHeader'
@@ -14,6 +14,7 @@ import TextArea from '../components/TextArea'
 import FormAlert from '../components/FormAlert'
 import Spinner from '../components/Spinner'
 import Autocomplete from '../components/Autocomplete'
+import ResumeFileInput from '../components/ResumeFileInput'
 import PersonalInfoForm from '../components/editor/PersonalInfoForm'
 import SummaryForm from '../components/editor/SummaryForm'
 import SkillsForm from '../components/editor/SkillsForm'
@@ -44,7 +45,6 @@ function ImportResumePage() {
   const [pastedText, setPastedText] = useState('')
   const [error, setError] = useState('')
   const [isReading, setIsReading] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   // After reading: the fields we found, the raw text, and where it came from
   const [draft, setDraft] = useState(null)
   const [rawText, setRawText] = useState('')
@@ -72,12 +72,6 @@ function ImportResumePage() {
       setError(readError.message)
     }
     setIsReading(false)
-  }
-
-  const handleDrop = (event) => {
-    event.preventDefault()
-    setIsDragging(false)
-    handleFile(event.dataTransfer.files[0])
   }
 
   const handlePaste = () => {
@@ -139,32 +133,7 @@ function ImportResumePage() {
           <div className="grid gap-5 lg:grid-cols-2">
             <section className="flex flex-col rounded-lg border border-line bg-paper p-5">
               <h2 className="mb-3 text-lg font-bold">Upload a file</h2>
-              <label
-                htmlFor="resume-file"
-                onDragOver={(event) => {
-                  event.preventDefault()
-                  setIsDragging(true)
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-6 py-12 text-center ${isDragging ? 'border-navy bg-ground' : 'border-line-strong hover:border-ink'}`}
-              >
-                <span className="grid size-12 place-items-center rounded-md bg-navy text-white">
-                  <FileUp size={22} aria-hidden="true" />
-                </span>
-                <span className="text-[16px] font-bold">Choose a file or drop it here</span>
-                <span className="text-sm text-ink-faint">PDF or Word (.docx), up to {MAX_FILE_SIZE_MB} MB</span>
-              </label>
-              <input
-                id="resume-file"
-                type="file"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="sr-only"
-                onChange={(event) => {
-                  handleFile(event.target.files[0])
-                  event.target.value = '' // lets the same file be chosen again
-                }}
-              />
+              <ResumeFileInput onFile={handleFile} />
             </section>
 
             <section className="rounded-lg border border-line bg-paper p-5">
