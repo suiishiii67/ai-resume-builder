@@ -14,6 +14,7 @@ import ResumeFilters from '../components/ResumeFilters'
 import EmptyState from '../components/EmptyState'
 import ConfirmDialog from '../components/ConfirmDialog'
 import PrintableResume from '../components/PrintableResume'
+import CreateResumeDialog from '../components/CreateResumeDialog'
 
 function DashboardPage() {
   const { resumes, isResumesLoading, deleteResume, duplicateResume } = useResumes()
@@ -23,6 +24,7 @@ function DashboardPage() {
   const [filters, setFilters] = useState({ search: '', company: '', role: '' })
   const [resumeToDelete, setResumeToDelete] = useState(null)
   const [resumeToPrint, setResumeToPrint] = useState(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const printRef = useRef(null)
 
   // PDF download: print a hidden copy of the resume
@@ -54,8 +56,8 @@ function DashboardPage() {
     showToast(`Deleted “${title}”.`)
   }
 
-  const companyNames = [...new Set(resumes.map((resume) => resume.companyName))].sort()
-  const roleTitles = [...new Set(resumes.map((resume) => resume.roleTitle))].sort()
+  const companyNames = [...new Set(resumes.map((resume) => resume.companyName).filter(Boolean))].sort()
+  const roleTitles = [...new Set(resumes.map((resume) => resume.roleTitle).filter(Boolean))].sort()
   const searchText = filters.search.trim().toLowerCase()
   const visibleResumes = resumes.filter(
     (resume) =>
@@ -71,7 +73,7 @@ function DashboardPage() {
         title="My resumes"
         description="Keep one resume per application, each tailored to its target company and role."
         actions={
-          <Button to="/create">
+          <Button onClick={() => setIsCreateOpen(true)}>
             <FilePlus2 size={18} aria-hidden="true" /> Create resume
           </Button>
         }
@@ -89,8 +91,8 @@ function DashboardPage() {
         <EmptyState
           icon={<FileText size={24} aria-hidden="true" />}
           title="Create your first resume"
-          description="Start with the company and job role you are applying for. We recommend a template and write a tailored first draft for you."
-          action={<Button to="/create">Start with my target</Button>}
+          description="Import the resume you already have, fill a short form, or start from a blank page."
+          action={<Button onClick={() => setIsCreateOpen(true)}>Create resume</Button>}
         />
       )}
 
@@ -135,6 +137,8 @@ function DashboardPage() {
           onCancel={() => setResumeToDelete(null)}
         />
       )}
+
+      {isCreateOpen && <CreateResumeDialog onClose={() => setIsCreateOpen(false)} />}
 
       <PrintableResume resume={resumeToPrint} layout={resumeToPrint && getTemplateLayout(templates, resumeToPrint.templateId)} printRef={printRef} />
     </>

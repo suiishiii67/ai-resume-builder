@@ -80,7 +80,7 @@ function CreateResumePage() {
 
     setIsGenerating(true)
     const draft = await generateResume({ basics, company, role, templateId: selectedTemplate.id })
-    const newResume = await createResume(draft)
+    const newResume = await createResume({ ...draft, createdVia: 'form' })
     showToast(`Draft ready for ${company.name}. Review it, then check your ATS score.`)
     navigate(`/editor/${newResume.id}`)
   }
