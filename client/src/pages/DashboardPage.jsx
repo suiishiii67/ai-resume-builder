@@ -1,7 +1,7 @@
 // Dashboard (/dashboard): the user's resumes.
 import { useEffect, useRef, useState } from 'react'
 import { useReactToPrint } from 'react-to-print'
-import { FilePlus2, FileText, SearchX } from 'lucide-react'
+import { FilePlus2, FileText, SearchX, ScanSearch } from 'lucide-react'
 import { useResumes } from '../context/ResumeContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useToast } from '../context/ToastContext'
@@ -75,9 +75,14 @@ function DashboardPage() {
         title="My resumes"
         description="Keep one resume per application, each tailored to its target company and role."
         actions={
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <FilePlus2 size={18} aria-hidden="true" /> Create resume
-          </Button>
+          <>
+            <Button to="/ats-checker?mode=upload" variant="secondary">
+              <ScanSearch size={18} aria-hidden="true" /> Check my resume's ATS score
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <FilePlus2 size={18} aria-hidden="true" /> Create resume
+            </Button>
+          </>
         }
       />
 

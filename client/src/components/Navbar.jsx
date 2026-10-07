@@ -7,6 +7,7 @@ import Logo from './Logo'
 import Button from './Button'
 
 const NAV_LINKS = [
+  { to: '/quick-check', label: 'ATS check' },
   { to: '/templates', label: 'Templates' },
   { to: '/#how-it-works', label: 'How it works', isSectionLink: true },
 ]

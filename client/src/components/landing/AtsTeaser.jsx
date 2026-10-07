@@ -1,5 +1,6 @@
 // Landing page section that previews the ATS checker.
 import { Check } from 'lucide-react'
+import Button from '../Button'
 import ScoreCircle from '../ScoreCircle'
 import KeywordChips from '../KeywordChips'
 import sampleResumes from '../../data/sampleResumes'
@@ -30,6 +31,9 @@ function AtsTeaser() {
             </li>
           ))}
         </ul>
+        <Button to="/quick-check" className="mt-7">
+          Check my resume's ATS score
+        </Button>
       </div>
 
       <figure className="rounded-lg border border-line bg-paper p-6 shadow-panel">

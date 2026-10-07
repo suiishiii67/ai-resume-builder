@@ -1,4 +1,5 @@
 // Home page (/).
+import { ScanSearch } from 'lucide-react'
 import Button from '../components/Button'
 import HeroDemo from '../components/landing/HeroDemo'
 import FeatureIndex from '../components/landing/FeatureIndex'
@@ -21,11 +22,11 @@ function LandingPage() {
             <Button to="/signup" size="lg">
               Build my tailored resume
             </Button>
-            <Button to="/templates" variant="secondary" size="lg">
-              Browse templates
+            <Button to="/quick-check" variant="secondary" size="lg">
+              <ScanSearch size={18} aria-hidden="true" /> Check my resume's ATS score
             </Button>
           </div>
-          <p className="mt-4 text-sm text-ink-faint">Free to use. PDF download included.</p>
+          <p className="mt-4 text-sm text-ink-faint">Free to use. The ATS check works without an account.</p>
         </div>
 
         <HeroDemo />
