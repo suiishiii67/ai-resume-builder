@@ -10,6 +10,7 @@ import SignupPage from '../pages/SignupPage'
 import TemplatesPage from '../pages/TemplatesPage'
 import DashboardPage from '../pages/DashboardPage'
 import CreateResumePage from '../pages/CreateResumePage'
+import ImportResumePage from '../pages/ImportResumePage'
 import ResumeEditorPage from '../pages/ResumeEditorPage'
 import AtsCheckerPage from '../pages/AtsCheckerPage'
 import ProfilePage from '../pages/ProfilePage'
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/create" element={<CreateResumePage />} />
+          <Route path="/import" element={<ImportResumePage />} />
           <Route path="/editor/:resumeId" element={<ResumeEditorPage />} />
           <Route path="/ats-checker" element={<AtsCheckerPage />} />
           <Route path="/profile" element={<ProfilePage />} />

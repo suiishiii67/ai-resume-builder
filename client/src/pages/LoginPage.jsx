@@ -27,9 +27,14 @@ function LoginPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target
-    setFormValues({ ...formValues, [name]: value })
-    setErrors({ ...errors, [name]: '' })
+    const newValues = { ...formValues, [name]: value }
+    setFormValues(newValues)
+    // While typing, re-check only a field that already shows an error
+    if (errors[name]) setErrors({ ...errors, [name]: validateLoginForm(newValues)[name] })
   }
+
+  // Check a field when the user leaves it
+  const handleBlur = (event) => setErrors({ ...errors, [event.target.name]: validateLoginForm(formValues)[event.target.name] })
 
   const handleLogin = async (event) => {
     event.preventDefault()
@@ -59,8 +64,8 @@ function LoginPage() {
           <FormAlert message={formError} />
 
           <form noValidate onSubmit={handleLogin} className="space-y-4">
-            <Input id="email" name="email" type="email" label="Email" autoComplete="email" value={formValues.email} onChange={handleChange} error={errors.email} required />
-            <PasswordInput id="password" name="password" label="Password" autoComplete="current-password" value={formValues.password} onChange={handleChange} error={errors.password} required />
+            <Input id="email" name="email" type="email" label="Email" autoComplete="email" value={formValues.email} onChange={handleChange} onBlur={handleBlur} error={errors.email} required />
+            <PasswordInput id="password" name="password" label="Password" autoComplete="current-password" value={formValues.password} onChange={handleChange} onBlur={handleBlur} error={errors.password} required />
             <Button type="submit" size="lg" loading={isSubmitting} className="w-full">
               Log in
             </Button>
@@ -71,7 +76,10 @@ function LoginPage() {
             <p className="mt-0.5 text-sm text-ink-faint">demo@resumeai.dev / demo1234 · admin@resumeai.dev / admin1234</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {DEMO_ACCOUNTS.map((account) => (
-                <Button key={account.email} variant="secondary" size="sm" onClick={() => setFormValues({ email: account.email, password: account.password })}>
+                <Button key={account.email} variant="secondary" size="sm" onClick={() => {
+                  setFormValues({ email: account.email, password: account.password })
+                  setErrors({})
+                }}>
                   {account.label}
                 </Button>
               ))}

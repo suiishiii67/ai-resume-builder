@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { validateSignupForm, hasErrors, PASSWORD_MIN_LENGTH } from '../utils/validation'
+import { validateSignupForm, hasErrors, PASSWORD_HINT } from '../utils/validation'
 import Input from '../components/Input'
 import PasswordInput from '../components/PasswordInput'
 import Button from '../components/Button'
@@ -22,9 +22,14 @@ function SignupPage() {
 
   const handleChange = (event) => {
     const { name, value } = event.target
-    setFormValues({ ...formValues, [name]: value })
-    setErrors({ ...errors, [name]: '' })
+    const newValues = { ...formValues, [name]: value }
+    setFormValues(newValues)
+    // While typing, re-check only a field that already shows an error
+    if (errors[name]) setErrors({ ...errors, [name]: validateSignupForm(newValues)[name] })
   }
+
+  // Check a field when the user leaves it
+  const handleBlur = (event) => setErrors({ ...errors, [event.target.name]: validateSignupForm(formValues)[event.target.name] })
 
   const handleSignup = async (event) => {
     event.preventDefault()
@@ -54,16 +59,16 @@ function SignupPage() {
           <FormAlert message={formError} />
 
           <form noValidate onSubmit={handleSignup} className="space-y-4">
-            <Input id="name" name="name" label="Full name" autoComplete="name" value={formValues.name} onChange={handleChange} error={errors.name} required />
-            <Input id="email" name="email" type="email" label="Email" autoComplete="email" value={formValues.email} onChange={handleChange} error={errors.email} required />
+            <Input id="name" name="name" label="Full name" autoComplete="name" value={formValues.name} onChange={handleChange} onBlur={handleBlur} error={errors.name} required />
+            <Input id="email" name="email" type="email" label="Email" autoComplete="email" value={formValues.email} onChange={handleChange} onBlur={handleBlur} error={errors.email} required />
             <PasswordInput
               id="password"
               name="password"
               label="Password"
               autoComplete="new-password"
-              hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+              hint={PASSWORD_HINT}
               value={formValues.password}
-              onChange={handleChange}
+              onChange={handleChange} onBlur={handleBlur}
               error={errors.password}
               required
             />
@@ -73,7 +78,7 @@ function SignupPage() {
               label="Confirm password"
               autoComplete="new-password"
               value={formValues.confirmPassword}
-              onChange={handleChange}
+              onChange={handleChange} onBlur={handleBlur}
               error={errors.confirmPassword}
               required
             />

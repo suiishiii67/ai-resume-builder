@@ -29,7 +29,7 @@ function ResumeCard({ resume, layout, templateName, onDuplicate, onDownload, onD
 
         <p className="mt-2 self-start rounded-[3px] border-2 border-ink bg-board px-2 py-0.5 text-sm font-semibold">
           <span className="sr-only">Target: </span>
-          {resume.companyName} · {resume.roleTitle}
+          {[resume.companyName, resume.roleTitle].filter(Boolean).join(' · ') || 'No target yet'}
         </p>
 
         <dl className="mt-3 grid grid-cols-2 gap-x-3 text-sm">

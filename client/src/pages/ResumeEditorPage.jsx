@@ -10,6 +10,8 @@ import { getResumeById } from '../services/resumeService'
 import { improveSection } from '../services/aiService'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import { getTemplateLayout } from '../utils/resumeFormat'
+import { findResumeErrors } from '../utils/validation'
+import { SECTION_LABELS } from '../data/sections'
 import { PRINT_PAGE_STYLE, buildPdfFileName } from '../utils/pdf'
 import PageLoader from '../components/PageLoader'
 import EmptyState from '../components/EmptyState'
@@ -36,6 +38,7 @@ function ResumeEditorPage() {
   const [improvingSection, setImprovingSection] = useState('')
   const [openSections, setOpenSections] = useState([searchParams.get('section') || 'personal'])
   const [isRetargetOpen, setIsRetargetOpen] = useState(false)
+  const [showErrors, setShowErrors] = useState(false) // show every field error after a failed save
 
   useEffect(() => {
     getResumeById(resumeId, user.id)
@@ -106,18 +109,29 @@ function ResumeEditorPage() {
     showToast(`Now targeting ${changes.companyName}. Check the keyword panel for what is missing.`)
   }
 
+  // Returns false when a field is wrong, and opens those sections
   const handleSave = async () => {
+    const sectionsWithErrors = findResumeErrors(resumeData)
+    if (sectionsWithErrors.length) {
+      setShowErrors(true)
+      setOpenSections((open) => [...new Set([...open, ...sectionsWithErrors])])
+      document.getElementById(`section-${sectionsWithErrors[0]}`)?.scrollIntoView({ behavior: 'smooth' })
+      const names = sectionsWithErrors.map((key) => (key === 'personal' ? 'Personal info' : SECTION_LABELS[key])).join(', ')
+      showToast(`Fix the highlighted fields in ${names} before saving.`, 'error')
+      return false
+    }
     setIsSaving(true)
     const savedResume = await saveResume(resumeData.id, resumeData)
     setResumeData(savedResume)
     setSavedSnapshot(JSON.stringify(savedResume))
     setIsSaving(false)
     showToast('Resume saved.')
+    return true
   }
 
   // The ATS checker reads the saved version, so save first
   const handleCheckAts = async () => {
-    if (hasUnsavedChanges) await handleSave()
+    if (hasUnsavedChanges && !(await handleSave())) return
     navigate(`/ats-checker?resume=${resumeData.id}`)
   }
 
@@ -153,7 +167,7 @@ function ResumeEditorPage() {
         role={role}
         printRef={printRef}
         onAddSkill={handleAddSkill}
-        sectionProps={{ onSectionChange: handleSectionChange, onMoveSection: handleMoveSection, onImprove: handleImprove, improvingSection, openSections, onToggleSection: handleToggleSection }}
+        sectionProps={{ onSectionChange: handleSectionChange, onMoveSection: handleMoveSection, onImprove: handleImprove, improvingSection, openSections, onToggleSection: handleToggleSection, showErrors }}
       />
 
       {isRetargetOpen && (

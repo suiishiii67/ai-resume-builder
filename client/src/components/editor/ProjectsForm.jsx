@@ -9,9 +9,11 @@ const PROJECT_FIELDS = [
   { name: 'bullets', label: 'What you built', type: 'textarea', hint: 'One point per line: what it does, your part, and the result.' },
 ]
 
-function ProjectsForm({ value, onChange }) {
+function ProjectsForm({ value, onChange, showErrors }) {
   return (
     <EntryListEditor
+      sectionKey="projects"
+      showErrors={showErrors}
       entries={value}
       onChange={onChange}
       fields={PROJECT_FIELDS}
