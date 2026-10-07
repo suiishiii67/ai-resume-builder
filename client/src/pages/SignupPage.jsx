@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { validateSignupForm, hasErrors, PASSWORD_MIN_LENGTH } from '../utils/validation'
+import { validateSignupForm, hasErrors, PASSWORD_HINT } from '../utils/validation'
 import Input from '../components/Input'
 import PasswordInput from '../components/PasswordInput'
 import Button from '../components/Button'
@@ -61,7 +61,7 @@ function SignupPage() {
               name="password"
               label="Password"
               autoComplete="new-password"
-              hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
+              hint={PASSWORD_HINT}
               value={formValues.password}
               onChange={handleChange}
               error={errors.password}

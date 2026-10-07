@@ -21,13 +21,13 @@ const SECTION_FORMS = {
 // Sections the AI can improve
 const AI_SECTIONS = ['summary', 'skills', 'experience', 'projects']
 
-function EditorSections({ resumeData, onSectionChange, onMoveSection, onImprove, improvingSection, openSections, onToggleSection }) {
+function EditorSections({ resumeData, onSectionChange, onMoveSection, onImprove, improvingSection, openSections, onToggleSection, showErrors }) {
   const { sectionOrder } = resumeData
 
   return (
     <div className="space-y-3">
       <EditorSection sectionKey="personal" title="Personal info" isOpen={openSections.includes('personal')} onToggle={() => onToggleSection('personal')}>
-        <PersonalInfoForm value={resumeData.personal} onChange={(value) => onSectionChange('personal', value)} />
+        <PersonalInfoForm value={resumeData.personal} onChange={(value) => onSectionChange('personal', value)} showErrors={showErrors} />
       </EditorSection>
 
       {sectionOrder.map((sectionKey, index) => {
@@ -46,7 +46,7 @@ function EditorSections({ resumeData, onSectionChange, onMoveSection, onImprove,
             onImprove={AI_SECTIONS.includes(sectionKey) ? () => onImprove(sectionKey) : undefined}
             isImproving={improvingSection === sectionKey}
           >
-            <SectionForm value={value} onChange={(newValue) => onSectionChange(sectionKey, newValue)} />
+            <SectionForm value={value} onChange={(newValue) => onSectionChange(sectionKey, newValue)} showErrors={showErrors} />
           </EditorSection>
         )
       })}

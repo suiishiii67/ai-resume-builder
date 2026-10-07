@@ -11,9 +11,11 @@ const EXPERIENCE_FIELDS = [
   { name: 'bullets', label: 'What you did', type: 'textarea', hint: 'One achievement per line. Start with a verb and add a number where you can.' },
 ]
 
-function ExperienceForm({ value, onChange }) {
+function ExperienceForm({ value, onChange, showErrors }) {
   return (
     <EntryListEditor
+      sectionKey="experience"
+      showErrors={showErrors}
       entries={value}
       onChange={onChange}
       fields={EXPERIENCE_FIELDS}

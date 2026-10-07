@@ -19,7 +19,7 @@ function StepBasics({ basics, onChange, errors }) {
         <legend className="mb-3 text-lg font-bold">Contact details</legend>
         {field('fullName', 'Full name', { required: true, autoComplete: 'name' })}
         {field('email', 'Email', { required: true, type: 'email', autoComplete: 'email' })}
-        {field('phone', 'Phone', { required: true, type: 'tel', autoComplete: 'tel', placeholder: '+91 98200 12345' })}
+        {field('phone', 'Phone', { required: true, type: 'tel', autoComplete: 'tel', placeholder: '+91 98200 12345', hint: '10-digit Indian mobile number.' })}
         {field('location', 'City', { placeholder: 'e.g. Pune, Maharashtra' })}
       </fieldset>
 
@@ -27,8 +27,8 @@ function StepBasics({ basics, onChange, errors }) {
         <legend className="mb-3 text-lg font-bold">Education</legend>
         {field('degree', 'Degree', { required: true, placeholder: 'e.g. B.E. in Computer Engineering' })}
         {field('institution', 'College / university', { required: true })}
-        {field('graduationYear', 'Graduation year', { required: true, inputMode: 'numeric', placeholder: '2027' })}
-        {field('score', 'CGPA or percentage', { placeholder: 'e.g. CGPA 8.4 / 10' })}
+        {field('graduationYear', 'Graduation year', { required: true, inputMode: 'numeric', maxLength: 4, placeholder: '2027' })}
+        {field('score', 'CGPA or percentage', { placeholder: 'e.g. CGPA 8.4 / 10 or 78%' })}
       </fieldset>
 
       <fieldset className="grid gap-4 sm:grid-cols-2">

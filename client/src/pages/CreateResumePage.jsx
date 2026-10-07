@@ -7,7 +7,7 @@ import { useCatalog } from '../context/CatalogContext'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { resolveCompany, resolveRole, getTargetKeywords } from '../utils/targetProfile'
-import { validateRequiredFields, validateEmail, hasErrors } from '../utils/validation'
+import { validateRequiredFields, validateBasicsForm, hasErrors } from '../utils/validation'
 import { buildResumeDraft, generateResume } from '../services/aiService'
 import { SECTION_LABELS } from '../data/sections'
 import PageHeader from '../components/PageHeader'
@@ -19,8 +19,6 @@ import StepTarget from '../components/wizard/StepTarget'
 import StepTemplate from '../components/wizard/StepTemplate'
 import StepBasics from '../components/wizard/StepBasics'
 import GeneratingState from '../components/wizard/GeneratingState'
-
-const REQUIRED_BASICS = { fullName: 'your full name', email: 'your email', phone: 'your phone number', degree: 'your degree', institution: 'your college', graduationYear: 'your graduation year' }
 
 function CreateResumePage() {
   const { user } = useAuth()
@@ -63,7 +61,7 @@ function CreateResumePage() {
   }
 
   const handleGenerate = async () => {
-    const basicsErrors = { ...validateRequiredFields(basics, REQUIRED_BASICS), email: validateEmail(basics.email) }
+    const basicsErrors = validateBasicsForm(basics)
     setErrors(basicsErrors)
     if (hasErrors(basicsErrors)) return
 

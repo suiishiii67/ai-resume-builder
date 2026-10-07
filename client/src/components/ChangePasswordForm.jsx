@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { changePassword } from '../services/authService'
-import { validatePasswordChange, hasErrors, PASSWORD_MIN_LENGTH } from '../utils/validation'
+import { validatePasswordChange, hasErrors, PASSWORD_HINT } from '../utils/validation'
 import PasswordInput from './PasswordInput'
 import Button from './Button'
 import FormAlert from './FormAlert'
@@ -47,7 +47,7 @@ function ChangePasswordForm() {
       <FormAlert message={formError} />
       <div className="grid gap-4 sm:grid-cols-2">
         <PasswordInput id="current-password" name="currentPassword" label="Current password" autoComplete="current-password" value={formValues.currentPassword} onChange={handleChange} error={errors.currentPassword} className="sm:col-span-2" required />
-        <PasswordInput id="new-password" name="newPassword" label="New password" autoComplete="new-password" hint={`At least ${PASSWORD_MIN_LENGTH} characters.`} value={formValues.newPassword} onChange={handleChange} error={errors.newPassword} required />
+        <PasswordInput id="new-password" name="newPassword" label="New password" autoComplete="new-password" hint={PASSWORD_HINT} value={formValues.newPassword} onChange={handleChange} error={errors.newPassword} required />
         <PasswordInput id="confirm-new-password" name="confirmPassword" label="Confirm new password" autoComplete="new-password" value={formValues.confirmPassword} onChange={handleChange} error={errors.confirmPassword} required />
       </div>
       <Button type="submit" className="mt-5" loading={isSaving}>
