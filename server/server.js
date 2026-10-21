@@ -7,6 +7,9 @@ const connectDB = require('./config/db')
 const { notFound, errorHandler } = require('./middleware/errorMiddleware')
 const authRoutes = require('./routes/authRoutes')
 const userRoutes = require('./routes/userRoutes')
+const resumeRoutes = require('./routes/resumeRoutes')
+const atsRoutes = require('./routes/atsRoutes')
+const adminRoutes = require('./routes/adminRoutes')
 
 const app = express()
 
@@ -24,7 +27,9 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes)
 app.use('/api/users', userRoutes)
-// Routes for resumes, ATS and admin are added in the next parts
+app.use('/api/resumes', resumeRoutes)
+app.use('/api/ats', atsRoutes)
+app.use('/api/admin', adminRoutes)
 
 // These two must stay last
 app.use(notFound)
