@@ -26,7 +26,7 @@ function errorHandler(error, req, res, next) {
 
   // MongoDB: a unique field (like email) already exists
   if (error.code === 11000) {
-    statusCode = 409
+    statusCode = 400
     message = 'An account with this email already exists.'
   }
 

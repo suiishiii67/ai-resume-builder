@@ -5,6 +5,8 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const connectDB = require('./config/db')
 const { notFound, errorHandler } = require('./middleware/errorMiddleware')
+const authRoutes = require('./routes/authRoutes')
+const userRoutes = require('./routes/userRoutes')
 
 const app = express()
 
@@ -20,7 +22,9 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true, db: isConnected ? 'connected' : 'disconnected' })
 })
 
-// Routes for auth, resumes, ATS and admin are added in the next parts
+app.use('/api/auth', authRoutes)
+app.use('/api/users', userRoutes)
+// Routes for resumes, ATS and admin are added in the next parts
 
 // These two must stay last
 app.use(notFound)
