@@ -69,7 +69,7 @@ function ModernTemplate({ resume }) {
   }
 
   return (
-    <article className="resume-page bg-white px-12 py-10 text-[13px] leading-[1.5] text-[#1b1f27] print:p-0" style={{ fontFamily: 'Barlow, Arial, sans-serif' }}>
+    <article className="resume-page bg-white px-12 py-10 text-[14px] leading-[1.45] text-[#1b1f27] print:p-0" style={{ fontFamily: 'Calibri, Carlito, Arial, Helvetica, sans-serif', fontVariantNumeric: 'lining-nums' }}>
       <header className="mb-4 rounded-[4px] px-6 py-5 text-white" style={{ backgroundColor: ACCENT, printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' }}>
         <h1 className="text-[30px] leading-none font-bold">{personal.fullName || 'Your Name'}</h1>
         {resume.roleTitle && <p className="mt-1.5 text-[15px] font-medium text-[#dbe4f2]">{resume.roleTitle}</p>}

@@ -1,4 +1,4 @@
-// Classic resume design (serif, formal).
+// Classic resume design (Times New Roman, formal).
 import { SECTION_LABELS } from '../../data/sections'
 import { splitBullets, formatDateRange, getContactItems, hasSectionContent } from '../../utils/resumeFormat'
 
@@ -60,7 +60,7 @@ function ClassicTemplate({ resume }) {
   }
 
   return (
-    <article className="resume-page bg-white px-14 py-12 text-[13px] leading-[1.45] text-[#1b1b1b] print:p-0" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+    <article className="resume-page bg-white px-14 py-12 text-[14px] leading-[1.4] text-[#1b1b1b] print:p-0" style={{ fontFamily: '"Times New Roman", Times, Tinos, serif', fontVariantNumeric: 'lining-nums' }}>
       <header className="mb-3 text-center">
         <h1 className="text-[26px] leading-tight font-bold">{personal.fullName || 'Your Name'}</h1>
         <p className="mt-1 text-[12.5px]">{getContactItems(personal).join('  |  ')}</p>

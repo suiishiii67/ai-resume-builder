@@ -55,7 +55,7 @@ function MinimalTemplate({ resume }) {
   }
 
   return (
-    <article className="resume-page bg-white px-12 py-10 text-[12px] leading-[1.42] text-[#222] print:p-0" style={{ fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+    <article className="resume-page bg-white px-12 py-10 text-[13px] leading-[1.4] text-[#222] print:p-0" style={{ fontFamily: 'Arial, Helvetica, sans-serif', fontVariantNumeric: 'lining-nums' }}>
       <header className="mb-2 border-b border-[#bbb] pb-2">
         <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.01em]">{personal.fullName || 'Your Name'}</h1>
         <p className="mt-0.5 text-[11.5px] text-[#444]">{getContactItems(personal).join('  ·  ')}</p>
