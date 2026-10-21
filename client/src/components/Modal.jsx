@@ -24,7 +24,7 @@ function Modal({ title, onClose, children, footer, size = 'md' }) {
     }
   }, [])
 
-  const widthClass = size === 'lg' ? 'max-w-2xl' : 'max-w-md'
+  const widthClass = { md: 'max-w-md', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size]
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-deep/55 p-0 sm:items-center sm:p-4">

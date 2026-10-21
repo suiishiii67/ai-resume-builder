@@ -1,5 +1,5 @@
 // Create Resume wizard (/create): target, template, details, then AI draft.
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, PenLine } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -8,7 +8,7 @@ import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import { validateRequiredFields, validateBasicsForm, validateEntry, hasErrors } from '../utils/validation'
-import { buildResumeDraft, generateResume } from '../services/aiService'
+import { buildResumeDraft, generateResume, BASIC_MODE_MESSAGE } from '../services/aiService'
 import { findSkillsInText, buildJobDescription } from '../utils/jobDescription'
 import { SECTION_LABELS } from '../data/sections'
 import PageHeader from '../components/PageHeader'
@@ -20,7 +20,8 @@ import StepTarget from '../components/wizard/StepTarget'
 import StepTemplate from '../components/wizard/StepTemplate'
 import StepBasics from '../components/wizard/StepBasics'
 import GeneratingState from '../components/wizard/GeneratingState'
-import AiDemoBadge, { AI_DEMO_TOOLTIP } from '../components/AiDemoBadge'
+import AiBadge, { AI_TOOLTIP } from '../components/AiBadge'
+import ReviewChangesDialog from '../components/ReviewChangesDialog'
 
 // Stop letters being typed into number fields
 const INPUT_FILTERS = {
@@ -44,6 +45,9 @@ function CreateResumePage() {
   const [errors, setErrors] = useState({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [showEntryErrors, setShowEntryErrors] = useState(false) // project/internship errors after a failed Generate
+  const [aiDraft, setAiDraft] = useState(null) // the AI draft, waiting for Accept / Keep mine
+  const [isSaving, setIsSaving] = useState(false)
+  const isBusy = useRef(false) // stops a second request from a quick double click
 
   // Worked out from the target
   const company = resolveCompany(companies, target.companyId, target.companyName)
@@ -55,6 +59,7 @@ function CreateResumePage() {
   // The company the user typed ('' if none)
   const companyName = target.companyName.trim() ? company.name : ''
   const previewResume = useMemo(() => buildResumeDraft({ basics, company, role, companyName, templateId: selectedTemplateId, jobDescription: target.jobDescription }), [basics, company, role, companyName, selectedTemplateId, target.jobDescription])
+  const draftOptions = { basics, company, role, companyName, templateId: selectedTemplate?.id, jobDescription: target.jobDescription }
 
   const handleNext = () => {
     if (step === 1) {
@@ -95,20 +100,47 @@ function CreateResumePage() {
       return
     }
 
+    if (isBusy.current) return
+    isBusy.current = true
     setIsGenerating(true)
     try {
       // Uses only what the user typed
-      const draft = await generateResume({ basics, company, role, companyName, templateId: selectedTemplate.id, jobDescription: target.jobDescription })
-      const newResume = await createResume({
-        ...draft,
-        jobDescription: buildJobDescription(target.jobDescription, { title: role.title, company: companyName }),
-        createdVia: 'form',
-      })
-      showToast('Draft ready. Review it, then check your ATS score.')
-      navigate(`/editor/${newResume.id}`)
+      const draft = await generateResume(draftOptions)
+      if (draft.source === 'ai') {
+        setAiDraft(draft) // the user reviews it first
+        setIsGenerating(false)
+      } else {
+        // Basic mode only tidies the user's own words, so there is nothing new to review
+        showToast(BASIC_MODE_MESSAGE, 'info')
+        await saveDraft(draft)
+      }
     } catch (error) {
       showToast(error.message, 'error')
       setIsGenerating(false)
+    }
+    isBusy.current = false
+  }
+
+  // Creates the resume from a draft and opens it in the editor
+  const saveDraft = async (draft) => {
+    const { source: _source, ...resumeFields } = draft
+    const newResume = await createResume({
+      ...resumeFields,
+      jobDescription: buildJobDescription(target.jobDescription, { title: role.title, company: companyName }),
+      createdVia: 'form',
+    })
+    showToast('Draft ready. Review it, then check your match estimate.')
+    navigate(`/editor/${newResume.id}`)
+  }
+
+  // Accept = the AI draft; Keep mine = the draft made from the user's own words by the written rules
+  const handleReviewChoice = async (useAi) => {
+    setIsSaving(true)
+    try {
+      await saveDraft(useAi ? aiDraft : buildResumeDraft(draftOptions))
+    } catch (error) {
+      showToast(error.message, 'error')
+      setIsSaving(false)
     }
   }
 
@@ -153,15 +185,50 @@ function CreateResumePage() {
                 Next <ArrowRight size={18} aria-hidden="true" />
               </Button>
             ) : (
-              <Button size="lg" onClick={handleGenerate} title={AI_DEMO_TOOLTIP}>
-                <PenLine size={18} aria-hidden="true" /> Generate with AI <AiDemoBadge />
+              <Button size="lg" onClick={handleGenerate} title={AI_TOOLTIP}>
+                <PenLine size={18} aria-hidden="true" /> Generate with AI <AiBadge />
               </Button>
             )}
           </div>
         </>
       )}
+
+      {aiDraft && (
+        <ReviewChangesDialog
+          title="Review your AI draft"
+          items={buildDraftReviewItems(aiDraft, basics, previewResume.summary, role.title, companyName)}
+          source={aiDraft.source}
+          onAccept={() => handleReviewChoice(true)}
+          onKeep={() => handleReviewChoice(false)}
+          onClose={() => setAiDraft(null)}
+          isSaving={isSaving}
+        />
+      )}
     </div>
   )
+}
+
+// The before / after rows for the AI draft. "Yours" is what the user typed (and the summary the written
+// rules make from it); the fact check compares the AI text with everything the user typed.
+function buildDraftReviewItems(aiDraft, basics, ownSummary, roleTitle, companyName) {
+  const typedProjects = basics.projects.filter((entry) => entry.name?.trim())
+  const typedExperience = basics.experience.filter((entry) => entry.jobTitle?.trim() || entry.company?.trim())
+  const entryText = (entry) => Object.values(entry).filter((value) => typeof value === 'string').join('\n')
+  const allTyped = [
+    basics.fullName, basics.degree, basics.institution, basics.graduationYear, basics.score, basics.location,
+    roleTitle, companyName, basics.skills.join(', '), ...typedProjects.map(entryText), ...typedExperience.map(entryText),
+  ].filter(Boolean).join('\n')
+
+  return [
+    { label: 'Summary', before: ownSummary, after: aiDraft.summary, original: allTyped },
+    ...aiDraft.projects.map((entry, index) => ({ label: `Project: ${entry.name}`, before: typedProjects[index]?.bullets || '', after: entry.bullets, original: allTyped })),
+    ...aiDraft.experience.map((entry, index) => ({
+      label: `Experience: ${[entry.jobTitle, entry.company].filter(Boolean).join(' · ')}`,
+      before: typedExperience[index]?.bullets || '',
+      after: entry.bullets,
+      original: allTyped,
+    })),
+  ].filter((item) => item.after)
 }
 
 export default CreateResumePage
