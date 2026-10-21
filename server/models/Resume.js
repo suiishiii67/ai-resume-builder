@@ -5,7 +5,7 @@ const toJSON = require('./toJSON')
 // "bullets" is plain text with one bullet per line, the same as in the editor.
 const experienceSchema = new mongoose.Schema(
   {
-    id: { type: String, required: true },
+    id: { type: String, required: [true, 'Each entry needs an id.'] },
     jobTitle: { type: String, default: '' },
     company: { type: String, default: '' },
     location: { type: String, default: '' },
@@ -18,7 +18,7 @@ const experienceSchema = new mongoose.Schema(
 
 const educationSchema = new mongoose.Schema(
   {
-    id: { type: String, required: true },
+    id: { type: String, required: [true, 'Each entry needs an id.'] },
     degree: { type: String, default: '' },
     institution: { type: String, default: '' },
     location: { type: String, default: '' },
@@ -31,7 +31,7 @@ const educationSchema = new mongoose.Schema(
 
 const projectSchema = new mongoose.Schema(
   {
-    id: { type: String, required: true },
+    id: { type: String, required: [true, 'Each entry needs an id.'] },
     name: { type: String, default: '' },
     techStack: { type: String, default: '' },
     link: { type: String, default: '' },
@@ -42,7 +42,7 @@ const projectSchema = new mongoose.Schema(
 
 const certificationSchema = new mongoose.Schema(
   {
-    id: { type: String, required: true },
+    id: { type: String, required: [true, 'Each entry needs an id.'] },
     name: { type: String, default: '' },
     issuer: { type: String, default: '' },
     year: { type: String, default: '' },
