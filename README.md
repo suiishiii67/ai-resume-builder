@@ -2,11 +2,11 @@
 
 A MERN stack web app that helps students and freshers make **ATS-friendly resumes for a specific job**.
 You import your resume (or fill a short form), paste the job description, and the site builds a resume from
-**your own details** with the skills that job asks for. Then you check its ATS score and download a PDF.
+**your own details** with the skills that job asks for. Then you check its match estimate and download a PDF.
 
 > **Current phase: full stack.** The React frontend talks to a Node.js + Express + MongoDB backend: real
-> accounts, saved resumes and an admin panel. The AI routes run on the server with Google Gemini; the frontend
-> buttons switch from the rule-based "demo mode" to them in Part 6 (see [Roadmap](#roadmap)).
+> accounts, saved resumes and an admin panel. The AI buttons use Google Gemini through the server, show every
+> suggestion for approval with a fact check, and fall back to a rule-based "basic mode" when the AI is busy.
 
 ![Landing page](docs/screenshots/01-landing.png)
 
@@ -41,7 +41,7 @@ on specific companies, industries, and job roles while improving ATS compatibili
 | **Three ways to start** | "Create resume" offers: Import my resume, Fill a form, or Start blank. |
 | **Paste a job description** | The site finds the skills the job asks for (about 130 skills, with short forms like JS = JavaScript, k8s = Kubernetes) and shows them as chips. |
 | **Create form** | Your own skills, projects and internships. "Generate" uses only what you typed: it turns your sentences into bullet points and writes a 40–80 word summary. |
-| **Resume editor** | Edit every section with a live A4 preview, a live ATS score, and the job's skills (green = in your resume, grey = missing; click one to add it). |
+| **Resume editor** | Edit every section with a live A4 preview, a live match estimate, and the job's skills (green = in your resume, grey = missing; click one to add it). |
 | **ATS checker** | Score out of 100 with matched and missing skills, fixes ranked by importance with "Fix in editor" links, and a "How this score works" box. |
 | **Tailor for a new job** | Make a copy of any resume for a new job description. Matching skills move to the top, the summary is rewritten, and you tick only the missing skills you really have. The original stays unchanged. |
 | **Templates and PDF** | Classic, Modern and Minimal templates. Downloads a text-based PDF that ATS systems can read. |
@@ -49,15 +49,15 @@ on specific companies, industries, and job roles while improving ATS compatibili
 | **Admin** | Manage templates, sample companies and roles; see totals; reset the demo data. |
 | **Form validation** | Mobile numbers (+91, 10 digits), CGPA out of 10 or percentage with %, years, dates, links and passwords, with errors shown as you fill the form. |
 
-## What is real and what is demo mode
+## What is real
 
 | Part | Status now |
 |---|---|
 | Import from PDF / Word / text | **Real.** Text is read in the browser with `pdfjs-dist` and `mammoth`, then split into sections with simple rules. |
 | Skills found in a job description | **Real.** Whole-word matching against the skills list (`client/src/data/skillsList.js`). |
-| ATS score | **Real calculation**, explained on the results page. It is an estimate like Jobscan; real ATS systems differ. |
+| Match estimate (ATS score) | **Real calculation**, explained on the results page. Shown to users as a "match estimate": real company systems differ. |
 | Editor, preview, PDF, validation, tailoring | **Real.** |
-| "Generate", "Improve with AI", tailored summary | **Demo mode in the frontend** (written rules that only rearrange what you typed). The real Gemini AI routes already work on the server; Part 6 connects these buttons to them. |
+| "Generate", "Improve with AI", tailored summary, job insights | **Real AI** (Google Gemini, called by our server). You see every suggestion before it changes anything; new facts are highlighted. If the AI is busy, "basic mode" (written rules) is used instead. |
 | Accounts and saved resumes | **Real.** Stored in MongoDB through the Express API. Passwords are hashed with bcrypt; login uses a JWT. |
 | Companies, roles and templates | **Real.** Stored in MongoDB and edited on the admin pages. Roles and templates are added by `npm run seed-catalog`; companies are added by the admin. |
 | Admin overview | **Real.** Statistics are worked out by MongoDB; the admin can block, unblock and delete users. |
@@ -74,20 +74,36 @@ on specific companies, industries, and job roles while improving ATS compatibili
 Without a job description, only sections and bullet quality are checked and the result is shown out of 100.
 The logic is in one function, `calculateAtsScore()` in `client/src/utils/atsScore.js`.
 
-## How the AI part will be connected (Phase 3)
+## AI in the website
 
-All AI work goes through four functions in `client/src/services/aiService.js`:
+Every AI button goes through `client/src/services/aiService.js`, which calls our server (`/api/ai/*`). The
+server calls Google Gemini, so the API key never reaches the browser.
 
-| Function | What it does |
-|---|---|
-| `generateBullets(text, jobDescription)` | Turns the user's sentences into bullet points |
-| `writeSummary(profile, jobDescription)` | Writes a 40–80 word summary from the user's own details |
-| `improveSection(section, content, jobDescription)` | Rephrases one section without adding facts |
-| `tailorSummary(resume, jobDescription)` | Rewrites the summary for a new job |
+| Button | Where | What it does |
+|---|---|---|
+| Generate with AI | Create wizard | First draft: summary and bullet points from what you typed |
+| Improve with AI | Editor (summary, skills, experience, projects) | Polishes one section without adding facts |
+| Write summary for this job | Tailor for a new job | A summary for the new job, for the copy |
+| Analyse job description | Wizard, Tailor, ATS checker | Must-have and nice-to-have skills, experience level, 3–5 points to highlight |
 
-Pages never contain AI logic; they only call these functions. In Phase 3, only the inside of each function
-changes: it will call our Express backend (for example `POST /api/ai/summary`), and the backend will call a real
-AI model. The API key stays on the server, because a key in frontend code can be seen by anyone.
+- **You approve every change.** Suggestions open in a before/after view ("Yours" on the left, "Suggestion" on
+  the right) with **Accept** and **Keep mine**. Nothing changes until you click Accept, and Undo still works
+  afterwards. Generate shows the AI draft *before* the resume is saved; Keep mine saves the version made
+  from your own words instead.
+- **Fact check.** `client/src/utils/factCheck.js` compares the suggestion with your original text and
+  highlights in yellow anything new: numbers (12, 30%, 800+), years and month-year dates, skills from the
+  skills list, and capitalised names like "Google". Ordinary words, the first word of a sentence and words
+  already in your text are not flagged. Hover a highlight: "Check this: not in your original text".
+- **Basic mode.** If the AI can't answer (server down, too slow, free limit reached, AI busy), the same
+  button uses simple written rules that only tidy what you typed, and shows "AI is busy right now, so basic
+  mode was used." Results are labelled "AI · Gemini" or "Basic mode". Logged-out pages (like the landing
+  demo) always use basic mode and never call the AI.
+- **One request per click.** While waiting (5–20 seconds) the button says "Writing…" and ignores extra
+  clicks; failed requests are never retried automatically.
+- **Models.** Main `gemini-3.5-flash-lite` (fast), backup `gemini-3.8-flash`. Change them with
+  `npm run pick-model` and `npm run set-models` (see "AI (Google Gemini)" below). The free tier has small
+  daily limits per model (about 20 requests a day for some Flash models), so the backup adds capacity, and
+  each user may make at most 30 AI requests per hour.
 
 ## Tech stack
 
@@ -199,6 +215,7 @@ Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
 | `npm run seed-catalog` | Add the built-in roles and templates (only the missing ones; never deletes) |
 | `npm run create-admin -- --reset-password` | Same, and also set that account's password to `ADMIN_PASSWORD` (if you forget it) |
 | `npm run check` | Test the running server and print PASS / FAIL for each test |
+| `npm run check -- --ai` | Same, plus the AI answer tests (about 7 real Gemini requests, so use it sparingly) |
 
 ### API
 
@@ -289,7 +306,7 @@ slower. If the main model is busy (500/503/504), over its free limit (429), miss
 
 **Free-tier limits are low.** Google sets them per model and per day (for example 20 requests a day for
 some Flash models). Each user may also make at most 30 AI requests per hour on our server. A full
-`npm run check` uses about 7 AI requests.
+`npm run check` makes no AI requests; `npm run check -- --ai` adds the AI answer tests (about 7 requests).
 
 | Method | URL | Body | Returns |
 |---|---|---|---|
@@ -321,12 +338,6 @@ copies the new bullets back into the original entries, so titles, companies and 
 the whole draft in plain code and asks the AI only for the summary and bullets, in one request. Every
 reply's shape is checked, and a wrong shape returns `502 AI returned an unexpected answer`.
 
-### Frontend to-do for Part 6 (AI in the frontend)
-
-- Make `aiService.js` call the `/api/ai/*` routes, and fall back to the current rule-based "basic mode" when
-  the AI answers 429/502/503 or the server can't be reached. Optionally show `/api/ai/job-insights` next to
-  the job description.
-
 ## Accounts
 
 There are **no demo accounts and no sample data**. The database starts empty:
@@ -355,5 +366,5 @@ The templates gallery and the landing page draw their previews with one clearly 
 |---|---|---|
 | Phase 1 | Frontend: all pages, import, job description matching, ATS score, tailoring | **Done** |
 | Phase 2 | Backend: Node.js + Express REST API, MongoDB, real login (bcrypt, JWT), frontend connected | **Done** |
-| Phase 3 | Real AI model (Gemini) on the server; `aiService.js` connected to it in Part 6 | In progress |
+| Phase 3 | Real AI (Gemini) with approval, fact check and basic-mode fallback | **Done** |
 | Phase 4 | Testing and deployment | Planned |

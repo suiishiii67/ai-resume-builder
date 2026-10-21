@@ -1,7 +1,7 @@
 // Navy side panel shown next to the login and signup forms.
 import { Check } from 'lucide-react'
 
-const NEXT_STEPS = ['Enter the company and role you are applying for', 'Pick a recommended template', 'Get an AI-written, keyword-ready first draft', 'Check your ATS score and download a PDF']
+const NEXT_STEPS = ['Enter the company and role you are applying for', 'Pick a recommended template', 'Get an AI-written, keyword-ready first draft', 'Check your match estimate and download a PDF']
 
 function AuthAside() {
   return (

@@ -2,7 +2,7 @@
 const STEPS = [
   { title: 'Import or fill a form', text: 'Upload your PDF or Word resume, paste its text, or fill a short form with your own skills, projects and internships.' },
   { title: 'Paste the job description', text: 'We find the skills the job asks for. Your summary and skills are tailored to it, using only what you wrote.' },
-  { title: 'Check your ATS score', text: 'See matched and missing skills, what to fix first, and exactly how the score is worked out.' },
+  { title: 'Check your match estimate', text: 'See matched and missing skills, what to fix first, and exactly how the score is worked out.' },
   { title: 'Download PDF', text: 'Download a clean, text-based PDF that applicant tracking systems can read, and apply.' },
 ]
 

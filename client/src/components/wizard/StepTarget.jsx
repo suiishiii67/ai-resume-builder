@@ -2,6 +2,7 @@
 import Autocomplete from '../Autocomplete'
 import JobDescriptionBox from '../JobDescriptionBox'
 import CompanyInsight from './CompanyInsight'
+import JobInsights from '../JobInsights'
 import { guessJobTitle } from '../../utils/jobDescription'
 
 function StepTarget({ target, onTargetChange, companies, roles, errors, company, role, templateName }) {
@@ -23,8 +24,9 @@ function StepTarget({ target, onTargetChange, companies, roles, errors, company,
         value={target.jobDescription}
         onChange={handleJobDescriptionChange}
         error={errors.jobDescription}
-        hint="Recommended. The skills it asks for are used for your summary, keywords and ATS score."
+        hint="Recommended. The skills it asks for are used for your summary, keywords and match estimate."
       />
+      <JobInsights jobDescription={target.jobDescription} />
 
       <div className="grid gap-5 md:grid-cols-2">
         <Autocomplete

@@ -7,7 +7,7 @@ import { useCatalog } from '../context/CatalogContext'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { getResumeById } from '../services/resumeService'
-import { improveSection } from '../services/aiService'
+import { improveSection, BASIC_MODE_MESSAGE } from '../services/aiService'
 import { getJobText } from '../utils/jobDescription'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import { getTemplateLayout } from '../utils/resumeFormat'
@@ -18,9 +18,26 @@ import PageLoader from '../components/PageLoader'
 import EmptyState from '../components/EmptyState'
 import Button from '../components/Button'
 import TargetStrip from '../components/TargetStrip'
+import ReviewChangesDialog from '../components/ReviewChangesDialog'
 import EditorToolbar from '../components/editor/EditorToolbar'
 import EditorWorkspace from '../components/editor/EditorWorkspace'
 import RetargetDialog from '../components/editor/RetargetDialog'
+
+// The before / after rows for an "Improve with AI" suggestion
+function buildReviewItems({ sectionKey, previousValue, value }) {
+  if (sectionKey === 'summary') return [{ label: 'Summary', before: previousValue, after: value }]
+  if (sectionKey === 'skills') return [{ label: 'Skills', before: previousValue.join(', '), after: value.join(', ') }]
+  // Experience / projects: one row per entry whose bullets changed. The fact check also knows the entry's
+  // title, company and dates, so those are not highlighted when the AI repeats them.
+  return value
+    .map((entry, index) => {
+      const old = previousValue[index] || {}
+      const label = [entry.jobTitle || entry.name, entry.company].filter(Boolean).join(' · ') || `Entry ${index + 1}`
+      const original = [old.jobTitle, old.company, old.name, old.techStack, old.startDate, old.endDate, old.bullets].filter(Boolean).join('\n')
+      return { label, before: old.bullets || '', after: entry.bullets || '', original }
+    })
+    .filter((item) => item.before !== item.after)
+}
 
 function ResumeEditorPage() {
   const { resumeId } = useParams()
@@ -37,6 +54,8 @@ function ResumeEditorPage() {
   const [loadError, setLoadError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [improvingSection, setImprovingSection] = useState('')
+  const [suggestion, setSuggestion] = useState(null) // an AI suggestion waiting for Accept / Keep mine
+  const isImproving = useRef(false) // stops a second request from a quick double click
   const [openSections, setOpenSections] = useState([searchParams.get('section') || 'personal'])
   const [isRetargetOpen, setIsRetargetOpen] = useState(false)
   const [showErrors, setShowErrors] = useState(false) // show every field error after a failed save
@@ -93,15 +112,31 @@ function ResumeEditorPage() {
     showToast(`Added “${skill}” to Skills.`)
   }
 
-  // Keep the old value so the user can undo
+  // Ask for a suggestion; nothing changes until the user accepts it
   const handleImprove = async (sectionKey) => {
-    const previousValue = resumeData[sectionKey]
+    if (isImproving.current) return
+    isImproving.current = true
     setImprovingSection(sectionKey)
-    const result = await improveSection(sectionKey, previousValue, getJobText(resumeData))
+    try {
+      const result = await improveSection(sectionKey, resumeData[sectionKey], getJobText(resumeData))
+      if (result.source === 'basic') showToast(BASIC_MODE_MESSAGE, 'info')
+      const newSuggestion = { sectionKey, previousValue: resumeData[sectionKey], ...result }
+      if (buildReviewItems(newSuggestion).length) setSuggestion(newSuggestion)
+      else showToast('No changes suggested: this section already looks good.', 'info')
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
     setImprovingSection('')
-    handleSectionChange(sectionKey, result.value)
+    isImproving.current = false
+  }
+
+  // Accept: apply the suggestion, and keep the old value so the user can undo
+  const handleAcceptSuggestion = () => {
+    const { sectionKey, previousValue, value, note } = suggestion
+    setSuggestion(null)
+    handleSectionChange(sectionKey, value)
     setOpenSections((open) => (open.includes(sectionKey) ? open : [...open, sectionKey]))
-    showToast(result.note, 'success', { actionLabel: 'Undo', onAction: () => handleSectionChange(sectionKey, previousValue) })
+    showToast(note, 'success', { actionLabel: 'Undo', onAction: () => handleSectionChange(sectionKey, previousValue) })
   }
 
   const handleRetarget = (changes) => {
@@ -178,6 +213,15 @@ function ResumeEditorPage() {
         sectionProps={{ onSectionChange: handleSectionChange, onMoveSection: handleMoveSection, onImprove: handleImprove, improvingSection, openSections, onToggleSection: handleToggleSection, showErrors }}
       />
 
+      {suggestion && (
+        <ReviewChangesDialog
+          title={`Improve ${SECTION_LABELS[suggestion.sectionKey] || 'section'}`}
+          items={buildReviewItems(suggestion)}
+          source={suggestion.source}
+          onAccept={handleAcceptSuggestion}
+          onKeep={() => setSuggestion(null)}
+        />
+      )}
       {isRetargetOpen && (
         <RetargetDialog
           companies={companies}

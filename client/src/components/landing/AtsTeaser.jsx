@@ -1,7 +1,7 @@
 // Landing page section that previews the ATS checker.
 import { Check } from 'lucide-react'
 import Button from '../Button'
-import ScoreCircle from '../ScoreCircle'
+import ScoreCircle, { MATCH_ESTIMATE_NOTE } from '../ScoreCircle'
 import KeywordChips from '../KeywordChips'
 import exampleResume from '../../data/exampleResume'
 import { calculateAtsScore } from '../../utils/atsScore'
@@ -32,13 +32,17 @@ function AtsTeaser() {
           ))}
         </ul>
         <Button to="/quick-check" className="mt-7">
-          Check my resume's ATS score
+          Check my resume's match estimate
         </Button>
       </div>
 
       <figure className="rounded-lg border border-line bg-paper p-6 shadow-panel">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-          <ScoreCircle score={sampleReport?.score ?? 0} size={150} />
+          <div className="flex max-w-[180px] flex-col items-center text-center">
+            <p className="board-text mb-1 text-[13px] text-ink-soft">Match estimate</p>
+            <ScoreCircle score={sampleReport?.score ?? 0} size={150} />
+            <p className="mt-2 text-xs leading-snug text-ink-soft">{MATCH_ESTIMATE_NOTE}</p>
+          </div>
           <div>
             <h3 className="board-text text-[13px] text-ink-soft">Skills from the job description</h3>
             <div className="mt-2">

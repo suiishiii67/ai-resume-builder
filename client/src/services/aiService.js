@@ -1,12 +1,15 @@
-// AI service (DEMO MODE).
-// These functions follow simple written rules for now, and use only what the user typed.
-// Phase 3: only the bodies of these functions change. Each one will call the Express backend,
-// which calls a real AI model and keeps the API key secret. Pages and components only call these
-// functions, and they already return the same data the backend will return, so nothing else changes.
-import { simulateRequest, createId } from '../utils/mockApi'
-import { findSkillsInText, textHasSkill, findListedSkill } from '../utils/jobDescription'
+// AI service: every AI button in the site calls these functions.
+// Each one asks our backend (/api/ai/*), which calls Google Gemini and keeps the API key secret.
+// If the AI is busy or unreachable, the same answer is made by simple written rules instead ("basic mode"),
+// so the site never breaks. Every answer has source: 'ai' or 'basic', so the page can show which one it is.
+// The rules only rearrange and clean what the user typed; they never add new facts.
+import { createId } from '../utils/mockApi'
+import { findSkillsInText, textHasSkill, findListedSkill, guessJobTitle } from '../utils/jobDescription'
+import { apiRequest, getToken } from './api'
 
-const AI_DELAY_MS = 900
+export const BASIC_MODE_MESSAGE = 'AI is busy right now, so basic mode was used.'
+// The server tries two models for up to 20 seconds each, so wait a little longer than that
+const AI_TIMEOUT_MS = 45000
 
 // ---------- Small text helpers ----------
 
@@ -129,28 +132,17 @@ function profileFromResume(resume) {
   }
 }
 
-// ---------- The AI functions pages call ----------
+// ---------- Basic mode: the same answers made by written rules ----------
 
-// Turns the user's sentences into bullet points. Returns { bullets: [...] }
-export function generateBullets(text, jobDescription = '') {
-  // TODO (Phase 3): POST /api/ai/bullets { text, jobDescription }
-  void jobDescription
-  return simulateRequest({ bullets: textToBullets(text) }, AI_DELAY_MS)
+function basicBullets(text) {
+  return { bullets: textToBullets(text) }
 }
 
-// A 40–80 word summary from the user's own degree, role, skills and best project. Returns { summary }
-export function writeSummary(profile, jobDescription = '') {
-  // TODO (Phase 3): POST /api/ai/summary { profile, jobDescription }
-  return simulateRequest({ summary: buildSummary(profile, jobDescription) }, AI_DELAY_MS)
+function basicSummary(profile, jobDescription) {
+  return { summary: buildSummary(profile, jobDescription) }
 }
 
-// Cleans up one section without adding facts. content = the section's value
-// (summary text, skills list, or experience/project entries). Returns { value, note }
-export function improveSection(section, content, jobDescription = '') {
-  // TODO (Phase 3): POST /api/ai/improve { section, content, jobDescription }
-  void jobDescription
-  let result
-
+function basicImprove(section, content) {
   if (section === 'summary') {
     const cleaned = content
       .replace(/\s+/g, ' ')
@@ -159,36 +151,32 @@ export function improveSection(section, content, jobDescription = '') {
       .map((sentence) => capitalise(sentence.trim()))
       .filter(Boolean)
       .join(' ')
-    result = { value: cleaned, note: 'Summary cleaned up: spacing, capital letters and "I am" removed.' }
+    return { value: cleaned, note: 'Summary cleaned up: spacing, capital letters and "I am" removed.' }
   }
 
   if (section === 'skills') {
     const unique = standardiseSkills(content)
     const changed = unique.length !== content.length || unique.some((name, index) => name !== content[index])
-    result = { value: unique, note: changed ? 'Skill names standardised and repeats removed.' : 'Skills already look clean.' }
+    return { value: unique, note: changed ? 'Skill names standardised and repeats removed.' : 'Skills already look clean.' }
   }
 
-  if (section === 'experience' || section === 'projects') {
-    const entries = content.map((entry) => ({ ...entry, bullets: textToBullets(entry.bullets).join('\n') }))
-    const withoutNumbers = entries.flatMap((entry) => entry.bullets.split('\n')).filter((line) => line && !/\d/.test(line)).length
-    result = {
-      value: entries,
-      note: withoutNumbers ? `Bullets now start with action verbs. ${withoutNumbers} still need a number (%, users, time saved).` : 'Bullets now start with action verbs.',
-    }
+  // experience / projects
+  const entries = content.map((entry) => ({ ...entry, bullets: textToBullets(entry.bullets).join('\n') }))
+  const withoutNumbers = entries.flatMap((entry) => entry.bullets.split('\n')).filter((line) => line && !/\d/.test(line)).length
+  return {
+    value: entries,
+    note: withoutNumbers ? `Bullets now start with action verbs. ${withoutNumbers} still need a number (%, users, time saved).` : 'Bullets now start with action verbs.',
   }
-
-  return simulateRequest(result, AI_DELAY_MS)
 }
 
-// Rewrites the summary for the resume's (new) job title and the job's skills. Returns { summary }
-export function tailorSummary(resume, jobDescription) {
-  // TODO (Phase 3): POST /api/ai/tailor-summary { resume, jobDescription }
-  return simulateRequest({ summary: buildSummary(profileFromResume(resume), jobDescription) }, AI_DELAY_MS)
+function basicJobInsights(jobDescription) {
+  return { jobTitle: guessJobTitle(jobDescription), mustHaveSkills: findSkillsInText(jobDescription), niceToHaveSkills: [], experienceLevel: '', keyPoints: [] }
 }
 
 // ---------- First draft from the create form ----------
 
-// Builds the resume right away from what the user typed (also used for the live preview).
+// Builds the resume right away from what the user typed (the wizard's live preview, the landing demo,
+// and basic mode for Generate).
 // companyName = the company the user typed ('' if none).
 export function buildResumeDraft({ basics, company, role, templateId, jobDescription = '', companyName = company.name }) {
   const skills = sortSkillsByJob(standardiseSkills(basics.skills || []), jobDescription)
@@ -232,7 +220,55 @@ export function buildResumeDraft({ basics, company, role, templateId, jobDescrip
   }
 }
 
+// ---------- The AI functions pages call ----------
+
+// Use basic mode when there was no answer, it was too slow, a limit was reached or the AI is down.
+// Other errors (400 wrong input, 401 not logged in) are real problems, so the page shows their message.
+function shouldUseBasicMode(error) {
+  return !error.status || [429, 500, 502, 503, 504].includes(error.status)
+}
+
+// Asks the AI once (never retries). makeBasicAnswer() gives the rule-based answer for basic mode.
+async function askAiOrBasic(path, body, makeBasicAnswer) {
+  // Logged out (e.g. the landing page demo): basic mode, without calling the server
+  if (!getToken()) return { ...makeBasicAnswer(), source: 'basic' }
+  try {
+    const answer = await apiRequest('POST', path, body, { timeoutMs: AI_TIMEOUT_MS })
+    return { ...answer, source: 'ai' }
+  } catch (error) {
+    if (!shouldUseBasicMode(error)) throw error
+    return { ...makeBasicAnswer(), source: 'basic' }
+  }
+}
+
+// Turns the user's sentences into bullet points → { bullets: [...], source }
+export function generateBullets(text, jobDescription = '') {
+  return askAiOrBasic('/ai/bullets', { text, jobDescription }, () => basicBullets(text))
+}
+
+// A 40–80 word summary from the user's own degree, role, skills and best project → { summary, source }
+export function writeSummary(profile, jobDescription = '') {
+  return askAiOrBasic('/ai/summary', { profile, jobDescription }, () => basicSummary(profile, jobDescription))
+}
+
+// Improves one section without adding facts. content = the section's value (summary text, skills list,
+// or experience/project entries) → { value, note, source }; value has the same shape as content
+export function improveSection(section, content, jobDescription = '') {
+  return askAiOrBasic('/ai/improve', { section, content, jobDescription }, () => basicImprove(section, content))
+}
+
+// Rewrites the summary for the resume's (new) job title and the job's skills → { summary, source }
+export function tailorSummary(resume, jobDescription) {
+  return askAiOrBasic('/ai/tailor-summary', { resume, jobDescription }, () => basicSummary(profileFromResume(resume), jobDescription))
+}
+
+// The first draft from the create form → the resume draft plus source
 export function generateResume(options) {
-  // TODO (Phase 3): POST /api/ai/generate (the backend writes the draft with a real AI model)
-  return simulateRequest(buildResumeDraft(options), 2200)
+  return askAiOrBasic('/ai/generate', { options }, () => buildResumeDraft(options))
+}
+
+// What a job description asks for → { jobTitle, mustHaveSkills, niceToHaveSkills, experienceLevel, keyPoints, source }
+// In basic mode only the skills (from our skills list) and a guessed job title are found.
+export function getJobInsights(jobDescription) {
+  return askAiOrBasic('/ai/job-insights', { jobDescription }, () => basicJobInsights(jobDescription))
 }

@@ -17,7 +17,7 @@ function ResumeCard({ resume, layout, templateName, onDuplicate, onDownload, onD
         <ResumePreview resume={resume} layout={layout} maxScale={0.45} />
         <span className="absolute top-3 right-3">
           {hasScore ? (
-            <StatusStamp tone={getScoreBand(resume.atsScore).tone} className="bg-paper">ATS {resume.atsScore}</StatusStamp>
+            <StatusStamp tone={getScoreBand(resume.atsScore).tone} className="bg-paper">Match {resume.atsScore}</StatusStamp>
           ) : (
             <StatusStamp className="bg-paper">Not checked</StatusStamp>
           )}

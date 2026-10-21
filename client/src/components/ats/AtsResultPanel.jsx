@@ -1,6 +1,6 @@
 // Full ATS report: score, skills, section checks, fixes and how the score works.
 import { Link } from 'react-router-dom'
-import ScoreCircle from '../ScoreCircle'
+import ScoreCircle, { MATCH_ESTIMATE_NOTE } from '../ScoreCircle'
 import KeywordChips from '../KeywordChips'
 import ScoreBreakdown from './ScoreBreakdown'
 import SectionChecks from './SectionChecks'
@@ -13,8 +13,12 @@ function AtsResultPanel({ report, resumeId }) {
 
   return (
     <div className="space-y-4" aria-live="polite">
-      <section aria-label="ATS score" className={`${panelClasses} flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8`}>
-        <ScoreCircle score={report.score} size={190} />
+      <section aria-label="Match estimate" className={`${panelClasses} flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:gap-8`}>
+        <div className="flex max-w-[220px] flex-col items-center text-center">
+          <p className="board-text mb-1 text-[13px] text-ink-soft">Match estimate</p>
+          <ScoreCircle score={report.score} size={190} />
+          <p className="mt-2 text-xs leading-snug text-ink-soft">{MATCH_ESTIMATE_NOTE}</p>
+        </div>
         <ScoreBreakdown breakdown={report.breakdown} />
       </section>
 

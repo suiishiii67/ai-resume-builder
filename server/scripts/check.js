@@ -1,5 +1,6 @@
 // Simple tests that call the running server and print PASS or FAIL for each one.
 // Start the server first (npm run dev), then run: npm run check
+// The AI answer tests call Gemini (free daily limit), so they only run with: npm run check -- --ai
 //
 // Tests that need a user make a temporary one (check-<random>@test.local) with createTestUser().
 // cleanup() deletes those users and their resumes and ATS checks at the end, even if a test fails.
@@ -506,6 +507,11 @@ async function runTests() {
     return status === 200 && JSON.stringify(body.value) === '["SQL","React","JavaScript"]' && isText(body.note)
   })
 
+  // These tests use real Gemini requests, so they only run when asked for
+  if (!process.argv.includes('--ai')) {
+    console.log('SKIPPED (run with --ai): AI answer tests')
+    return
+  }
   if (!process.env.GEMINI_API_KEY) {
     console.log('SKIPPED (no GEMINI_API_KEY): AI answer tests')
     return

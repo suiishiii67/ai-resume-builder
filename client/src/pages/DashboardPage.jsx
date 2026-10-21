@@ -85,7 +85,7 @@ function DashboardPage() {
         actions={
           <>
             <Button to="/ats-checker?mode=upload" variant="secondary">
-              <ScanSearch size={18} aria-hidden="true" /> Check my resume's ATS score
+              <ScanSearch size={18} aria-hidden="true" /> Check my resume's match estimate
             </Button>
             <Button onClick={() => setIsCreateOpen(true)}>
               <FilePlus2 size={18} aria-hidden="true" /> Create resume
