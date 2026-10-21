@@ -115,10 +115,13 @@ ai-resume-builder/
 │   ├── config/                 database connection
 │   ├── models/                 User, Resume, AtsCheck (Mongoose)
 │   ├── middleware/             login checks (protect, adminOnly), 404 and error handler
-│   ├── controllers/, routes/   API code: auth, users, resumes, ats, admin
-│   ├── utils/                  validators (same rules as the frontend)
+│   ├── controllers/, routes/   API code: auth, users, resumes, ats, admin, ai
+│   ├── services/               geminiService.js (the only file that uses the Gemini key)
+│   ├── prompts/                one AI prompt per route, plus the shared rules
+│   ├── data/                   skillsList (same list as the frontend)
+│   ├── utils/                  validators and skill helpers (same rules as the frontend)
 │   ├── seed/                   site configuration, if the server needs it (no fake data)
-│   └── scripts/                create-admin.js, check.js (tests)
+│   └── scripts/                create-admin, check (tests), pick-model, set-models, ai-demo, secret-check
 └── docs/screenshots/
 ```
 
@@ -228,6 +231,73 @@ Rules worth knowing:
 account the backend creates is the admin from `.env`. `npm run check` makes temporary users
 (`check-<random>@test.local`) and deletes them, with their resumes and ATS checks, when it finishes.
 
+### AI (Google Gemini)
+
+The AI routes call Google Gemini **from the server**, so the API key is never in the browser.
+
+**1. Get a free key.** Sign in at [Google AI Studio](https://aistudio.google.com/apikey) and create an API key.
+No billing is needed; without billing the key uses the free tier.
+
+**2. Put it ONLY in `server/.env`:**
+
+```
+GEMINI_API_KEY=your-key-here
+```
+
+Never put the real key in `.env.example`, the frontend, the README, a screenshot or a commit, and never share
+it. `.env` is in `.gitignore`. Run `npm run secret-check` before every commit: it scans all tracked files for
+anything that looks like a key, password or database password and prints only the file and line. If a key
+ever leaks, delete it in Google AI Studio and create a new one.
+
+**3. Choose the models:**
+
+```bash
+npm run pick-model                      # lists the Flash models your key can use and test-calls the best ones
+npm run set-models -- <main> <backup>   # saves GEMINI_MODEL and GEMINI_FALLBACK_MODEL in .env (nothing else)
+npm run pick-model -- --saved           # tests the saved models through the app's own code
+npm run ai-demo                         # before/after of three weak bullets, and which model answered
+```
+
+`pick-model` chooses the newest **stable** Flash model as the main model and the newest stable Flash-Lite
+as the backup (a preview only if no stable one answers). Pro models are not used: lower free limits and
+slower. If the main model is busy (500/503/504), over its free limit (429), missing (404) or slower than
+20 seconds, the request is sent once to the backup. If both fail, the user sees a friendly message
+("AI limit reached, try again in a minute" or "AI is not available right now"), never Gemini's own error.
+
+**Free-tier limits are low.** Google sets them per model and per day (for example 20 requests a day for
+some Flash models). Each user may also make at most 30 AI requests per hour on our server. A full
+`npm run check` uses about 7 AI requests.
+
+| Method | URL | Body | Returns |
+|---|---|---|---|
+| POST | `/api/ai/bullets` | `{ text, jobDescription }` | `{ bullets }` |
+| POST | `/api/ai/summary` | `{ profile, jobDescription }` | `{ summary }` (40–80 words) |
+| POST | `/api/ai/improve` | `{ section, content, jobDescription }` | `{ value, note }` (`value` has the same shape as `content`) |
+| POST | `/api/ai/tailor-summary` | `{ resume, jobDescription }` | `{ summary }` |
+| POST | `/api/ai/generate` | `{ options }` | the first resume draft (same shape as the frontend's `generateResume`) |
+| POST | `/api/ai/job-insights` | `{ jobDescription }` | `{ jobTitle, mustHaveSkills, niceToHaveSkills, experienceLevel, keyPoints }` |
+
+All AI routes need login. Each piece of text may be up to 6,000 characters. `jobDescription` can be text or
+the resume's `{ text, title, company, skills }` object. AI requests and answers are not saved.
+
+**How the AI is kept honest.** Every prompt (in `server/prompts/`, one file per route) includes the same
+rules from `prompts/rules.js`:
+
+- use only the facts the user gave; never invent companies, job titles, numbers, dates, skills, tools,
+  certifications, results, purposes or praise
+- keep every number the user wrote and never add new numbers or percentages
+- bullets start with a strong action verb that matches the user's real part, one line, under 25 words, no
+  full stop, no "I" or "my"
+- use the job description's wording only where it truly fits the user's facts
+- simple, professional English for tech jobs in India and abroad
+- reply with JSON only, in the exact shape asked for
+
+The code also protects the facts: `improve` for experience/projects sends only the bullets to the AI and
+copies the new bullets back into the original entries, so titles, companies and dates can't change;
+`improve` for skills runs in plain code (standard names, no repeats) and needs no AI; `generate` builds
+the whole draft in plain code and asks the AI only for the summary and bullets, in one request. Every
+reply's shape is checked, and a wrong shape returns `502 AI returned an unexpected answer`.
+
 ### Frontend to-do for Part 5 (connecting the frontend)
 
 - Send `jobDescription` as an object `{ text, title, company, skills }` instead of a plain string plus a
@@ -238,6 +308,8 @@ account the backend creates is the admin from `.env`. `npm run check` makes temp
 - Remove the demo resumes and demo accounts in `client/src/data/` (`sampleResumes.js`, `users.js`) and
   update the Demo accounts section below.
 - Point the API calls at `http://localhost:5001`.
+- Make `aiService.js` call the `/api/ai/*` routes, and (Part 6) fall back to the current rule-based "basic
+  mode" when the AI answers 429/502/503. Optionally show `/api/ai/job-insights` next to the job description.
 
 ## Demo accounts
 
