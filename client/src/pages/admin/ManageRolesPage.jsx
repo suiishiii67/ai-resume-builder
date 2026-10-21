@@ -52,7 +52,7 @@ function ManageRolesPage() {
     <>
       <PageHeader
         title="Manage roles"
-        description="Each role's skills and keywords shape the AI draft, the keyword panel and the ATS score."
+        description="Each role's skills and keywords shape the AI draft, the keyword panel and the match estimate."
         actions={<Button onClick={() => setEditingRole({})}><Plus size={18} aria-hidden="true" /> Add role</Button>}
       />
       <DataTable caption="Job roles" columns={columns} rows={roles} onEdit={setEditingRole} onDelete={setRoleToDelete} getRowName={(role) => role.title} />

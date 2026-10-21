@@ -10,7 +10,7 @@ function AccountSummary({ user, resumes }) {
   const stats = [
     { label: 'Resumes', value: resumes.length },
     { label: 'ATS checked', value: checkedResumes.length },
-    { label: 'Average ATS score', value: averageScore ?? '–' },
+    { label: 'Average match estimate', value: averageScore ?? '–' },
   ]
 
   return (

@@ -16,14 +16,14 @@ function LandingPage() {
           </h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-soft">
             Import your resume or fill a short form, paste the job description, and get a resume that uses your own
-            details with the skills that job asks for. Then check its ATS score and download the PDF.
+            details with the skills that job asks for. Then check its match estimate and download the PDF.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button to="/signup" size="lg">
               Build my tailored resume
             </Button>
             <Button to="/quick-check" variant="secondary" size="lg">
-              <ScanSearch size={18} aria-hidden="true" /> Check my resume's ATS score
+              <ScanSearch size={18} aria-hidden="true" /> Check my resume's match estimate
             </Button>
           </div>
           <p className="mt-4 text-sm text-ink-faint">Free to use. The ATS check works without an account.</p>

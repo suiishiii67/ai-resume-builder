@@ -59,7 +59,7 @@ function RoleForm({ role, onSave, onCancel, isSaving }) {
       <form id="role-form" noValidate onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
         <Input id="role-title" name="title" label="Role title" value={formValues.title} onChange={handleChange} error={errors.title} required />
         <Select id="role-category" name="category" label="Category" value={formValues.category} onChange={handleChange} options={CATEGORY_OPTIONS} />
-        <TextArea id="role-skills" name="skillsText" label="Required skills" rows={2} className="sm:col-span-2" hint="Separate with commas. These count most in the ATS score." value={formValues.skillsText} onChange={handleChange} error={errors.skillsText} />
+        <TextArea id="role-skills" name="skillsText" label="Required skills" rows={2} className="sm:col-span-2" hint="Separate with commas. These count most in the match estimate." value={formValues.skillsText} onChange={handleChange} error={errors.skillsText} />
         <TextArea id="role-keywords" name="keywordsText" label="Keywords" rows={2} className="sm:col-span-2" hint="Separate with commas." value={formValues.keywordsText} onChange={handleChange} />
         <TextArea id="role-summary" name="sampleSummary" label="Sample summary" rows={3} className="sm:col-span-2" hint="Write {company} where the company name should go." value={formValues.sampleSummary} onChange={handleChange} />
         <TextArea id="role-bullets" name="bulletsText" label="Sample experience bullet points" rows={4} className="sm:col-span-2" hint="One bullet point per line." value={formValues.bulletsText} onChange={handleChange} />

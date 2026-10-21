@@ -4,9 +4,9 @@ import { FileUp, ClipboardList, ScanSearch, Target, Columns2, FileDown } from 'l
 const FEATURES = [
   { icon: FileUp, title: 'Import your resume', text: 'Upload a PDF or Word file, or paste the text. We fill in the fields and you check them before editing.' },
   { icon: ClipboardList, title: 'Built from the job description', text: 'Paste the job post and see the skills it asks for. Your draft uses only your own details, with the matching skills first.' },
-  { icon: ScanSearch, title: 'Honest ATS score', text: 'A score out of 100 with matched and missing skills, fixes ranked by impact, and a plain explanation of every point.' },
+  { icon: ScanSearch, title: 'Honest match estimate', text: 'A score out of 100 with matched and missing skills, fixes ranked by impact, and a plain explanation of every point.' },
   { icon: Target, title: 'Tailor for a new job', text: 'Make a copy of any resume for a new job description in a minute. The original stays unchanged.' },
-  { icon: Columns2, title: 'Live preview and score', text: 'The A4 page and the ATS score update with every keystroke, so you see what you will send.' },
+  { icon: Columns2, title: 'Live preview and score', text: 'The A4 page and the match estimate update with every keystroke, so you see what you will send.' },
   { icon: FileDown, title: 'PDF download', text: 'Downloads a text-based PDF that applicant tracking systems can read. Not an image of your resume.' },
 ]
 
