@@ -47,7 +47,7 @@ function RetargetDialog({ companies, roles, currentTarget, onApply, onClose }) {
           listPosition="inline"
           value={target.companyName}
           options={companies.map((company) => ({ id: company.id, label: company.name, meta: company.type }))}
-          hint="Pick a sample company or type any other."
+          hint="Pick a company from the list or type any other."
           error={errors.companyName}
           onTextChange={(text) => setTarget({ ...target, companyName: text, companyId: '' })}
           onSelect={(option) => setTarget({ ...target, companyName: option.label, companyId: option.id })}

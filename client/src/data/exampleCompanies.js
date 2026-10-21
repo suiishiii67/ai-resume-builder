@@ -1,5 +1,6 @@
-// Sample companies (made-up names). Each one sets the template, section order, emphasis and keywords.
-const companies = [
+// Example companies (made-up names), used ONLY by the landing page demo to show how the target changes
+// the resume. They are not in the database and never shown in the wizard; the admin adds real companies.
+const exampleCompanies = [
   {
     id: 'nimbus-labs',
     name: 'Nimbus Labs',
@@ -12,7 +13,6 @@ const companies = [
     keywords: ['data structures', 'algorithms', 'system design', 'scalable', 'performance', 'code review', 'unit testing', 'ownership'],
     focus: 'Problem solving, clean code and projects that show real depth.',
     summaryLine: 'Strong grounding in data structures, algorithms and writing scalable, well-tested code.',
-    isSample: true,
   },
   {
     id: 'corewave-it',
@@ -26,7 +26,6 @@ const companies = [
     keywords: ['client', 'SDLC', 'agile', 'communication', 'teamwork', 'documentation', 'certification', 'quick learner'],
     focus: 'Strong academics, broad fundamentals, certifications and readiness to learn client technologies.',
     summaryLine: 'A quick learner who works well in agile teams and communicates clearly with clients.',
-    isSample: true,
   },
   {
     id: 'sprintly',
@@ -40,7 +39,6 @@ const companies = [
     keywords: ['shipped', 'MVP', 'end-to-end', 'fast-paced', 'ownership', 'user feedback', 'iterate', 'full stack'],
     focus: 'People who ship: end-to-end projects, speed and ownership over titles.',
     summaryLine: 'Enjoys owning features end-to-end and shipping fast based on user feedback.',
-    isSample: true,
   },
   {
     id: 'meridian-advisory',
@@ -54,7 +52,6 @@ const companies = [
     keywords: ['stakeholder', 'client-facing', 'analysis', 'presentation', 'problem solving', 'structured thinking', 'impact', 'recommendations'],
     focus: 'Structured thinking, client communication and measurable impact.',
     summaryLine: 'Brings structured thinking and clear presentation of analysis to stakeholders.',
-    isSample: true,
   },
   {
     id: 'ledgerline-capital',
@@ -68,8 +65,7 @@ const companies = [
     keywords: ['accuracy', 'compliance', 'risk', 'reporting', 'reconciliation', 'regulatory', 'attention to detail', 'SQL'],
     focus: 'Accuracy, compliance awareness and clear, auditable reporting.',
     summaryLine: 'Known for accuracy and attention to detail in reporting and compliance work.',
-    isSample: true,
   },
 ]
 
-export default companies
+export default exampleCompanies

@@ -4,6 +4,7 @@ import { useCatalog } from '../../context/CatalogContext'
 import { buildResumeDraft } from '../../services/aiService'
 import { resumeToText, containsKeyword } from '../../utils/keywordUtils'
 import { getTargetKeywords } from '../../utils/targetProfile'
+import exampleCompanies from '../../data/exampleCompanies'
 import { SECTION_LABELS } from '../../data/sections'
 import TargetStrip from '../TargetStrip'
 import ResumePreview from '../templates/ResumePreview'
@@ -34,17 +35,18 @@ const DEMO_BASICS = {
 }
 
 function HeroDemo() {
-  const { companies, roles, templates } = useCatalog()
+  // Example companies for this demo only; roles and templates come from the catalog
+  const { roles, templates } = useCatalog()
   const [activeIndex, setActiveIndex] = useState(0)
 
   // Skip targets an admin has deleted
   const availableTargets = useMemo(
     () =>
       DEMO_TARGETS.map((target) => ({
-        company: companies.find((company) => company.id === target.companyId),
+        company: exampleCompanies.find((company) => company.id === target.companyId),
         role: roles.find((role) => role.id === target.roleId),
       })).filter((target) => target.company && target.role),
-    [companies, roles]
+    [roles]
   )
 
   const activeTarget = availableTargets[activeIndex] || availableTargets[0]

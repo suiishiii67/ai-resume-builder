@@ -2,15 +2,15 @@
 import { useState } from 'react'
 import { SearchX } from 'lucide-react'
 import { useCatalog } from '../context/CatalogContext'
-import sampleResumes from '../data/sampleResumes'
+import exampleResume from '../data/exampleResume'
 import Select from '../components/Select'
 import Button from '../components/Button'
 import TemplateCard from '../components/TemplateCard'
 import EmptyState from '../components/EmptyState'
 import PageLoader from '../components/PageLoader'
 
-// Same sample resume in every template, so only the design changes
-const PREVIEW_RESUME = sampleResumes[0]
+// Same example resume in every template, so only the design changes
+const PREVIEW_RESUME = exampleResume
 const EMPTY_FILTERS = { industry: '', companyType: '', roleId: '' }
 
 function TemplatesPage() {

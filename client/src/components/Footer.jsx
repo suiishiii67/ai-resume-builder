@@ -33,7 +33,7 @@ function Footer() {
 
       <div className="border-t border-white/10">
         <p className="mx-auto max-w-6xl px-4 py-5 text-sm sm:px-6">
-          © 2026 AI Resume Builder · MERN stack college project. Companies shown are fictional sample data.
+          © 2026 AI Resume Builder · MERN stack college project.
         </p>
       </div>
     </footer>
