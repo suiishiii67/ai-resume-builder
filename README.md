@@ -199,6 +199,7 @@ Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
 | `npm run seed-catalog` | Add the built-in roles and templates (only the missing ones; never deletes) |
 | `npm run create-admin -- --reset-password` | Same, and also set that account's password to `ADMIN_PASSWORD` (if you forget it) |
 | `npm run check` | Test the running server and print PASS / FAIL for each test |
+| `npm run check -- --ai` | Same, plus the AI answer tests (about 7 real Gemini requests, so use it sparingly) |
 
 ### API
 
@@ -289,7 +290,7 @@ slower. If the main model is busy (500/503/504), over its free limit (429), miss
 
 **Free-tier limits are low.** Google sets them per model and per day (for example 20 requests a day for
 some Flash models). Each user may also make at most 30 AI requests per hour on our server. A full
-`npm run check` uses about 7 AI requests.
+`npm run check` makes no AI requests; `npm run check -- --ai` adds the AI answer tests (about 7 requests).
 
 | Method | URL | Body | Returns |
 |---|---|---|---|
