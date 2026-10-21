@@ -4,7 +4,8 @@ const User = require('../models/User')
 const Resume = require('../models/Resume')
 const AtsCheck = require('../models/AtsCheck')
 
-// GET /api/admin/stats  →  { totals, averageAtsScore, topMissingSkills, topJobTitles, resumesByCreatedVia, latestResumes }
+// GET /api/admin/stats  →  { totals, averageAtsScore, topMissingSkills, topJobTitles, resumesByCreatedVia,
+//                          resumesPerCompany, checkedResumes, latestResumes }
 async function getStats(req, res) {
   const [users, resumes, atsChecks, quickChecks] = await Promise.all([
     User.countDocuments({ role: 'user' }), // admins are not counted
@@ -42,6 +43,14 @@ async function getStats(req, res) {
   const resumesByCreatedVia = { import: 0, form: 0, blank: 0 }
   for (const row of createdViaRows) resumesByCreatedVia[row._id] = row.count
 
+  // How many resumes target each company: { "Infosys": 4, "No company yet": 2 }
+  const companyRows = await Resume.aggregate([{ $group: { _id: '$companyName', count: { $sum: 1 } } }])
+  const resumesPerCompany = {}
+  for (const row of companyRows) resumesPerCompany[row._id || 'No company yet'] = row.count
+
+  // How many resumes have an ATS score saved
+  const checkedResumes = await Resume.countDocuments({ atsScore: { $ne: null } })
+
   // The 5 most recently edited resumes, with the owner's name
   const latest = await Resume.find().sort({ updatedAt: -1 }).limit(5).populate('userId', 'name')
   const latestResumes = latest.map((resume) => ({
@@ -57,6 +66,8 @@ async function getStats(req, res) {
     topMissingSkills,
     topJobTitles,
     resumesByCreatedVia,
+    resumesPerCompany,
+    checkedResumes,
     latestResumes,
   })
 }

@@ -61,7 +61,7 @@ const resumeSchema = new mongoose.Schema(
     roleId: { type: String, default: '' },
     roleTitle: { type: String, default: '' },
 
-    templateId: { type: String, enum: ['classic', 'modern', 'minimal'], default: 'classic' },
+    templateId: { type: String, trim: true, maxlength: 60, default: 'classic' }, // a template's id from the catalog
     sectionOrder: {
       type: [String],
       default: ['summary', 'skills', 'projects', 'experience', 'education', 'certifications'],

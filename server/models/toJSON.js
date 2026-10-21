@@ -1,8 +1,9 @@
 // Shared JSON settings for every model: send "id" instead of "_id",
 // and never send "__v" or the password to the frontend.
+// Catalog items (companies, roles, templates) have their own readable "id", which is kept.
 const toJSON = {
   transform(doc, ret) {
-    if (ret._id) ret.id = ret._id.toString()
+    if (ret._id && !ret.id) ret.id = ret._id.toString()
     delete ret._id
     delete ret.__v
     delete ret.password
