@@ -1,4 +1,4 @@
-// Makes the mock services act like a real API (Promise + short delay).
+// Helpers for the rule-based AI demo (Promise + short delay) and ids for new resume entries.
 // Returns a copy of result after a short delay
 export function simulateRequest(result, delayMs = 400) {
   return new Promise((resolve) => {
@@ -6,13 +6,7 @@ export function simulateRequest(result, delayMs = 400) {
   })
 }
 
-export function simulateError(message, delayMs = 400) {
-  return new Promise((_resolve, reject) => {
-    setTimeout(() => reject(new Error(message)), delayMs)
-  })
-}
-
-// Unique id like "resume-lq3k9-x7a2" (MongoDB will make ids in Phase 2)
+// Unique id like "exp-lq3k9-x7a2" for experience, project, education and certificate entries
 export function createId(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 }

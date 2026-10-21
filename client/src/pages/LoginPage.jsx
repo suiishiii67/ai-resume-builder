@@ -9,12 +9,6 @@ import Button from '../components/Button'
 import FormAlert from '../components/FormAlert'
 import AuthAside from '../components/AuthAside'
 
-// Demo accounts (mock data)
-const DEMO_ACCOUNTS = [
-  { label: 'Fill demo user', email: 'demo@resumeai.dev', password: 'demo1234' },
-  { label: 'Fill admin', email: 'admin@resumeai.dev', password: 'admin1234' },
-]
-
 function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -70,21 +64,6 @@ function LoginPage() {
               Log in
             </Button>
           </form>
-
-          <div className="mt-6 rounded-md border border-dashed border-line-strong bg-paper p-4">
-            <p className="text-sm font-semibold">Demo accounts</p>
-            <p className="mt-0.5 text-sm text-ink-faint">demo@resumeai.dev / demo1234 · admin@resumeai.dev / admin1234</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {DEMO_ACCOUNTS.map((account) => (
-                <Button key={account.email} variant="secondary" size="sm" onClick={() => {
-                  setFormValues({ email: account.email, password: account.password })
-                  setErrors({})
-                }}>
-                  {account.label}
-                </Button>
-              ))}
-            </div>
-          </div>
 
           <p className="mt-6 text-[15px] text-ink-soft">
             New here?{' '}

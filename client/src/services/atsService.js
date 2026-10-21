@@ -1,25 +1,32 @@
-// Runs the ATS check and keeps a record of every check (in the browser for now).
+// The ATS check. The score is worked out in the browser (instant, and the editor shows it live);
+// the server keeps a record of each check, with only the result, never the resume text.
 import { calculateAtsScore } from '../utils/atsScore'
-import { simulateRequest, createId } from '../utils/mockApi'
-import { loadFromStorage, saveToStorage } from '../utils/storage'
+import { apiRequest } from './api'
 
-const ATS_CHECKS_KEY = 'atsChecks'
-
-export function analyzeResume({ resume, jobDescription }) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  return simulateRequest(calculateAtsScore(resume, jobDescription), 900)
+export async function analyzeResume({ resume, jobDescription }) {
+  return calculateAtsScore(resume, jobDescription)
 }
 
-// One record per check. source: 'saved' (a saved resume) or 'quick' (an uploaded resume).
-// userId is '' when the user is not logged in.
-export function saveAtsCheck({ source, userId = '', resumeId = '', score, jobTitle = '', hasJobDescription }) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const record = { id: createId('check'), source, userId, resumeId, score, jobTitle, hasJobDescription, checkedAt: new Date().toISOString() }
-  saveToStorage(ATS_CHECKS_KEY, [...loadFromStorage(ATS_CHECKS_KEY, []), record])
-  return simulateRequest(record, 100)
+// One record per check. source: 'saved' (a saved resume) or 'quick' (an uploaded resume, works logged out).
+// Without login, quick checks are limited per hour, so a failed save never stops the user seeing their report.
+export async function saveAtsCheck({ source, resumeId = '', score, jobTitle = '', hasJobDescription, missingSkills = [] }) {
+  try {
+    const { check } = await apiRequest('POST', '/ats/checks', {
+      source,
+      resumeId: source === 'saved' ? resumeId : undefined,
+      score,
+      jobTitle: jobTitle.slice(0, 120),
+      hasJobDescription,
+      missingSkills: missingSkills.slice(0, 50),
+    })
+    return check
+  } catch {
+    return null
+  }
 }
 
-export function getAtsChecks() {
-  // TODO (Phase 2): replace mock with real API call to the Express backend (admin only)
-  return simulateRequest(loadFromStorage(ATS_CHECKS_KEY, []), 200)
+// Admin only: the latest checks
+export async function getAtsChecks() {
+  const { checks } = await apiRequest('GET', '/admin/ats-checks')
+  return checks
 }

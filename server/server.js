@@ -11,6 +11,7 @@ const resumeRoutes = require('./routes/resumeRoutes')
 const atsRoutes = require('./routes/atsRoutes')
 const adminRoutes = require('./routes/adminRoutes')
 const aiRoutes = require('./routes/aiRoutes')
+const catalogRoutes = require('./routes/catalogRoutes')
 
 const app = express()
 
@@ -32,6 +33,7 @@ app.use('/api/resumes', resumeRoutes)
 app.use('/api/ats', atsRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/ai', aiRoutes)
+app.use('/api/catalog', catalogRoutes)
 
 // These two must stay last
 app.use(notFound)

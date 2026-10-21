@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "create-admin": "node scripts/create-admin.js",
+    "seed-catalog": "node scripts/seed-catalog.js",
     "check": "node scripts/check.js",
     "pick-model": "node scripts/pick-model.js",
     "set-models": "node scripts/set-models.js",

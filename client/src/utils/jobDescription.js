@@ -42,3 +42,22 @@ export function guessJobTitle(text) {
   const title = firstLine.replace(/\(.*?\)/g, '').replace(/^(job title|role|position)\s*:\s*/i, '').trim()
   return title.length <= 60 && title.split(/\s+/).length <= 8 ? title : ''
 }
+
+// ---------- The job description saved on a resume ----------
+// A resume keeps its job description as { text, title, company, skills }.
+
+// Builds that object from the pasted text (skills are found in the text)
+export function buildJobDescription(text, { title = '', company = '' } = {}) {
+  const cleanText = (text || '').trim()
+  return { text: cleanText, title: title.trim(), company: company.trim(), skills: findSkillsInText(cleanText) }
+}
+
+// The job description text of a resume ('' if none)
+export function getJobText(resume) {
+  return resume?.jobDescription?.text || ''
+}
+
+// The skills the resume's job description asks for ([] if none)
+export function getJobSkills(resume) {
+  return resume?.jobDescription?.skills || []
+}

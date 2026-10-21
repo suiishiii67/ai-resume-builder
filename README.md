@@ -4,8 +4,9 @@ A MERN stack web app that helps students and freshers make **ATS-friendly resume
 You import your resume (or fill a short form), paste the job description, and the site builds a resume from
 **your own details** with the skills that job asks for. Then you check its ATS score and download a PDF.
 
-> **Current phase: frontend.** The React frontend is complete and works fully in the browser. The Node.js +
-> Express + MongoDB backend and the real AI model come in later phases (see [Roadmap](#roadmap)).
+> **Current phase: full stack.** The React frontend talks to a Node.js + Express + MongoDB backend: real
+> accounts, saved resumes and an admin panel. The AI routes run on the server with Google Gemini; the frontend
+> buttons switch from the rule-based "demo mode" to them in Part 6 (see [Roadmap](#roadmap)).
 
 ![Landing page](docs/screenshots/01-landing.png)
 
@@ -56,8 +57,10 @@ on specific companies, industries, and job roles while improving ATS compatibili
 | Skills found in a job description | **Real.** Whole-word matching against the skills list (`client/src/data/skillsList.js`). |
 | ATS score | **Real calculation**, explained on the results page. It is an estimate like Jobscan; real ATS systems differ. |
 | Editor, preview, PDF, validation, tailoring | **Real.** |
-| "Generate", "Improve with AI", tailored summary | **Demo mode.** Written rules, not an AI model: they clean up and rearrange only what you typed and never add new facts. Every AI button has a "Demo mode" badge. |
-| Accounts and saved resumes | **Demo mode.** Saved in your browser (`localStorage`), so they stay on one device. |
+| "Generate", "Improve with AI", tailored summary | **Demo mode in the frontend** (written rules that only rearrange what you typed). The real Gemini AI routes already work on the server; Part 6 connects these buttons to them. |
+| Accounts and saved resumes | **Real.** Stored in MongoDB through the Express API. Passwords are hashed with bcrypt; login uses a JWT. |
+| Companies, roles and templates | **Real.** Stored in MongoDB and edited on the admin pages. Roles and templates are added by `npm run seed-catalog`; companies are added by the admin. |
+| Admin overview | **Real.** Statistics are worked out by MongoDB; the admin can block, unblock and delete users. |
 
 ### How the ATS score works
 
@@ -93,8 +96,9 @@ AI model. The API key stays on the server, because a key in frontend code can be
 | Frontend | React 19 + Vite, plain JavaScript, React Router, Tailwind CSS, Context API | same |
 | File reading | pdfjs-dist (PDF), mammoth (Word .docx) | same |
 | PDF download | react-to-print (browser print, keeps real text) | same |
-| Data | Browser `localStorage` through the services in `client/src/services` | MongoDB |
-| API | Service functions that return Promises | Node.js + Express REST API |
+| Data | MongoDB with Mongoose (users, resumes, ATS check records, companies, roles, templates) | same |
+| API | Node.js + Express 5 REST API; the frontend calls it through `client/src/services/api.js` | same |
+| Login | bcrypt-hashed passwords, JWT in the `Authorization` header | same |
 | AI | Rule-based demo in `aiService.js` | AI model called from the backend |
 
 ## Folder structure
@@ -106,37 +110,48 @@ ai-resume-builder/
 │   └── src/
 │       ├── pages/              one file per page (Dashboard, Create, Import, Editor, ATS checker …)
 │       ├── components/         shared UI, plus editor/, wizard/, ats/, landing/, admin/, templates/
-│       ├── services/           aiService (AI functions), atsService, resumeService, authService …
+│       ├── services/           api.js (calls the backend), authService, resumeService, catalogService …
 │       ├── utils/              atsScore, jobDescription, resumeImport, validation, keywordUtils …
-│       ├── data/               skillsList, sample resumes, companies, roles, templates, job descriptions
+│       ├── data/               skillsList, sections, the example resume and companies used only for previews
 │       └── context/            logged-in user, resumes, catalog, toasts
 ├── server/                     Express + MongoDB backend (Phase 2, in progress)
 │   ├── server.js               starts Express and connects to MongoDB
 │   ├── config/                 database connection
-│   ├── models/                 User, Resume, AtsCheck (Mongoose)
+│   ├── models/                 User, Resume, AtsCheck, Company, Role, Template (Mongoose)
 │   ├── middleware/             login checks (protect, adminOnly), 404 and error handler
-│   ├── controllers/, routes/   API code: auth, users, resumes, ats, admin, ai
+│   ├── controllers/, routes/   API code: auth, users, resumes, ats, admin, catalog, ai
 │   ├── services/               geminiService.js (the only file that uses the Gemini key)
 │   ├── prompts/                one AI prompt per route, plus the shared rules
 │   ├── data/                   skillsList (same list as the frontend)
 │   ├── utils/                  validators and skill helpers (same rules as the frontend)
-│   ├── seed/                   site configuration, if the server needs it (no fake data)
+│   ├── seed/                   roles and templates (site configuration) for npm run seed-catalog
 │   └── scripts/                create-admin, check (tests), pick-model, set-models, ai-demo, secret-check
 └── docs/screenshots/
 ```
 
 ## How to run
 
-Requirements: Node.js 20 or newer.
+Requirements: Node.js 20 or newer and MongoDB Community Server (running locally).
 
 ```bash
 git clone https://github.com/suiishiii67/ai-resume-builder.git
-cd ai-resume-builder/client
+cd ai-resume-builder
+
+# 1. Backend (first time: see the Backend section for server/.env)
+cd server
 npm install
-npm run dev
+npm run create-admin      # the admin account from server/.env
+npm run seed-catalog      # the built-in roles and templates (safe to run again)
+npm run dev               # http://localhost:5001
+
+# 2. Frontend, in a second terminal
+cd client
+npm install
+npm run dev               # http://localhost:5173
 ```
 
-Open http://localhost:5173.
+Open http://localhost:5173 and sign up. The frontend calls the API at `http://localhost:5001/api`; to use
+another address, copy `client/.env.example` to `client/.env` and change `VITE_API_URL`.
 
 | Command (inside `client/`) | What it does |
 |---|---|
@@ -165,7 +180,10 @@ cp .env.example .env        # then fill in JWT_SECRET and the ADMIN_ values
 # 3. Create the admin account (from ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD in .env)
 npm run create-admin
 
-# 4. Start the server, then run the tests in a second terminal
+# 4. Add the built-in roles and templates (site configuration, not demo data)
+npm run seed-catalog
+
+# 5. Start the server, then run the tests in a second terminal
 npm run dev
 npm run check
 ```
@@ -178,6 +196,7 @@ Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
 | `npm run dev` | Start the server and restart it when a file changes (nodemon) |
 | `npm start` | Start the server |
 | `npm run create-admin` | Create the admin account, or make that email an admin if it already exists |
+| `npm run seed-catalog` | Add the built-in roles and templates (only the missing ones; never deletes) |
 | `npm run create-admin -- --reset-password` | Same, and also set that account's password to `ADMIN_PASSWORD` (if you forget it) |
 | `npm run check` | Test the running server and print PASS / FAIL for each test |
 
@@ -209,6 +228,10 @@ sent back.
 | DELETE | `/api/admin/users/:id` | Admin | | `{ message }` (also deletes their resumes and ATS checks) |
 | GET | `/api/admin/resumes` | Admin | | `{ resumes }` (newest 100, with `owner: { name, email }`) |
 | GET | `/api/admin/ats-checks` | Admin | | `{ checks }` (newest 100) |
+| GET | `/api/catalog` | Public | | `{ companies, roles, templates }` |
+| POST | `/api/admin/companies` (also `roles`, `templates`) | Admin | the item's fields | `{ item }` (gets a readable id like `infosys`) |
+| PUT | `/api/admin/companies/:id` (also `roles`, `templates`) | Admin | the fields to change | `{ item }` |
+| DELETE | `/api/admin/companies/:id` (also `roles`, `templates`) | Admin | | `{ message }` (at least one template must stay) |
 
 Status codes: `400` invalid input or email already used, `401` not logged in / wrong email or password,
 `403` account blocked or not an admin, `404` unknown route or a resume that isn't yours, `429` too many
@@ -298,28 +321,23 @@ copies the new bullets back into the original entries, so titles, companies and 
 the whole draft in plain code and asks the AI only for the summary and bullets, in one request. Every
 reply's shape is checked, and a wrong shape returns `502 AI returned an unexpected answer`.
 
-### Frontend to-do for Part 5 (connecting the frontend)
+### Frontend to-do for Part 6 (AI in the frontend)
 
-- Send `jobDescription` as an object `{ text, title, company, skills }` instead of a plain string plus a
-  separate `jobSkills` array. This is the shape the backend stores.
-- Remove the demo login buttons ("Fill demo user").
-- Remove the admin **Reset demo data** button.
-- Remove the "Use a sample job description" buttons.
-- Remove the demo resumes and demo accounts in `client/src/data/` (`sampleResumes.js`, `users.js`) and
-  update the Demo accounts section below.
-- Point the API calls at `http://localhost:5001`.
-- Make `aiService.js` call the `/api/ai/*` routes, and (Part 6) fall back to the current rule-based "basic
-  mode" when the AI answers 429/502/503. Optionally show `/api/ai/job-insights` next to the job description.
+- Make `aiService.js` call the `/api/ai/*` routes, and fall back to the current rule-based "basic mode" when
+  the AI answers 429/502/503 or the server can't be reached. Optionally show `/api/ai/job-insights` next to
+  the job description.
 
-## Demo accounts
+## Accounts
 
-| Account | Email | Password |
-|---|---|---|
-| User | `demo@resumeai.dev` | `demo1234` |
-| Admin | `admin@resumeai.dev` | `admin1234` |
+There are **no demo accounts and no sample data**. The database starts empty:
 
-The demo user has a complete B.Tech CSE fresher resume and a copy tailored for a Frontend Developer job.
-**Admin → Reset demo data** brings the sample data back. Company names in the sample data are made up.
+- **Users** sign up on the site and import or create their own resumes.
+- **The admin** is created from `ADMIN_NAME`, `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `server/.env` with
+  `npm run create-admin`, then logs in on the normal login page and is taken to `/admin`.
+
+The templates gallery and the landing page draw their previews with one clearly marked example resume
+(`client/src/data/exampleResume.js`), and the landing demo uses made-up example companies
+(`client/src/data/exampleCompanies.js`). Neither is saved in the database.
 
 ## Screenshots
 
@@ -336,6 +354,6 @@ The demo user has a complete B.Tech CSE fresher resume and a copy tailored for a
 | Phase | Scope | Status |
 |---|---|---|
 | Phase 1 | Frontend: all pages, import, job description matching, ATS score, tailoring | **Done** |
-| Phase 2 | Backend: Node.js + Express REST API, MongoDB, real login (bcrypt, JWT) | In progress |
-| Phase 3 | Real AI model behind `aiService.js`, called from the backend | Planned |
+| Phase 2 | Backend: Node.js + Express REST API, MongoDB, real login (bcrypt, JWT), frontend connected | **Done** |
+| Phase 3 | Real AI model (Gemini) on the server; `aiService.js` connected to it in Part 6 | In progress |
 | Phase 4 | Testing and deployment | Planned |

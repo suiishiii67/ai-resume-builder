@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useResumes } from '../../context/ResumeContext'
 import { analyzeResume, saveAtsCheck } from '../../services/atsService'
 import { readResumeFile, parseResumeText, countImportedFields, MIN_TEXT_LENGTH } from '../../utils/resumeImport'
-import { findSkillsInText } from '../../utils/jobDescription'
+import { buildJobDescription } from '../../utils/jobDescription'
 import { savePendingResume } from '../../utils/pendingResume'
 import Button from '../Button'
 import TextArea from '../TextArea'
@@ -69,7 +69,8 @@ function QuickCheckPanel() {
     setIsChecking(true)
     const resume = parseResumeText(text)
     const report = await analyzeResume({ resume, jobDescription })
-    await saveAtsCheck({ source: 'quick', userId: user?.id || '', score: report.score, jobTitle: report.jobTitle, hasJobDescription: report.hasJobDescription })
+    // Only the result is saved (never the resume text); this works without logging in
+    await saveAtsCheck({ source: 'quick', score: report.score, jobTitle: report.jobTitle, hasJobDescription: report.hasJobDescription, missingSkills: report.missingSkills })
     setChecked({ resume, report, jobDescription: jobDescription.trim() })
     setIsChecking(false)
   }
@@ -84,8 +85,7 @@ function QuickCheckPanel() {
       companyName: '',
       roleId: '',
       roleTitle: report.jobTitle,
-      jobDescription: checked.jobDescription,
-      jobSkills: findSkillsInText(checked.jobDescription),
+      jobDescription: buildJobDescription(checked.jobDescription, { title: report.jobTitle }),
       createdVia: 'import',
     }
     if (!user) {
@@ -95,8 +95,13 @@ function QuickCheckPanel() {
       return
     }
     setIsSaving(true)
-    const savedResume = await createResume(newResume)
-    navigate(`/editor/${savedResume.id}`)
+    try {
+      const savedResume = await createResume(newResume)
+      navigate(`/editor/${savedResume.id}`)
+    } catch (error) {
+      setErrors({ resume: error.message })
+      setIsSaving(false)
+    }
   }
 
   const tabClasses = (mode) => `h-9 flex-1 rounded-md text-[15px] font-semibold ${inputMode === mode ? 'bg-navy text-white' : 'text-ink-soft hover:text-ink'}`

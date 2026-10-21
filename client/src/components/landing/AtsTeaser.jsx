@@ -3,12 +3,12 @@ import { Check } from 'lucide-react'
 import Button from '../Button'
 import ScoreCircle from '../ScoreCircle'
 import KeywordChips from '../KeywordChips'
-import sampleResumes from '../../data/sampleResumes'
+import exampleResume from '../../data/exampleResume'
 import { calculateAtsScore } from '../../utils/atsScore'
+import { getJobText } from '../../utils/jobDescription'
 
-// A real report for the sample Frontend Developer resume
-const sampleResume = sampleResumes.find((resume) => resume.id === 'r-aarav-frontend')
-const sampleReport = sampleResume && calculateAtsScore(sampleResume, sampleResume.jobDescription)
+// A real report for the example Frontend Developer resume (worked out in the browser, nothing is saved)
+const sampleReport = calculateAtsScore(exampleResume, getJobText(exampleResume))
 const SAMPLE_SKILLS = sampleReport ? [...sampleReport.matchedSkills.slice(0, 6).map((word) => ({ word, matched: true })), ...sampleReport.missingSkills.map((word) => ({ word, matched: false }))] : []
 
 const REPORT_ITEMS = ['A score out of 100, with a plain explanation of every point', 'Skills from the job description: matched and missing', 'Section and bullet point checks', 'Fixes ranked by impact, each linked to the right editor section']
@@ -46,7 +46,7 @@ function AtsTeaser() {
             </div>
           </div>
         </div>
-        <figcaption className="mt-4 text-xs text-ink-faint">Real report for the sample Frontend Developer resume.</figcaption>
+        <figcaption className="mt-4 text-xs text-ink-faint">Real report for an example Frontend Developer resume.</figcaption>
       </figure>
     </section>
   )

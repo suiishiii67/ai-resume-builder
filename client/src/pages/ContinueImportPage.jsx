@@ -22,10 +22,15 @@ function ContinueImportPage() {
       navigate('/dashboard', { replace: true })
       return
     }
-    createResume(pendingResume).then((savedResume) => {
-      showToast('Your uploaded resume is saved. Fix the points from your ATS report here.')
-      navigate(`/editor/${savedResume.id}`, { replace: true })
-    })
+    createResume(pendingResume)
+      .then((savedResume) => {
+        showToast('Your uploaded resume is saved. Fix the points from your ATS report here.')
+        navigate(`/editor/${savedResume.id}`, { replace: true })
+      })
+      .catch((error) => {
+        showToast(`Your resume could not be saved: ${error.message}`, 'error')
+        navigate('/dashboard', { replace: true })
+      })
   }, [createResume, navigate, showToast])
 
   return <PageLoader message="Saving your uploaded resume…" />

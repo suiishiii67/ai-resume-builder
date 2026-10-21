@@ -20,10 +20,14 @@ function ManageTemplatesPage() {
 
   const handleSave = async (template) => {
     setIsSaving(true)
-    setTemplates(await saveTemplate(template))
+    try {
+      setTemplates(await saveTemplate(template))
+      setEditingTemplate(null)
+      showToast(`Saved the ${template.name} template.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
     setIsSaving(false)
-    setEditingTemplate(null)
-    showToast(`Saved the ${template.name} template.`)
   }
 
   const handleDeleteRequest = (template) => {
@@ -37,8 +41,12 @@ function ManageTemplatesPage() {
   const handleDelete = async () => {
     const { id, name } = templateToDelete
     setTemplateToDelete(null)
-    setTemplates(await deleteTemplate(id))
-    showToast(`Deleted the ${name} template.`)
+    try {
+      setTemplates(await deleteTemplate(id))
+      showToast(`Deleted the ${name} template.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
   }
 
   const getRoleTitles = (roleIds) => roleIds.map((roleId) => roles.find((role) => role.id === roleId)?.title).filter(Boolean).join(', ')

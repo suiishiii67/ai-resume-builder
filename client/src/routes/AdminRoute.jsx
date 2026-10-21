@@ -1,5 +1,5 @@
 // Only lets admins open admin pages.
-// TODO (Phase 2): the server must also check the admin role.
+// The server checks the admin role too (adminOnly middleware); this only hides the pages.
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import PageLoader from '../components/PageLoader'

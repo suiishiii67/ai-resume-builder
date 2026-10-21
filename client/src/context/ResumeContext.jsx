@@ -15,9 +15,12 @@ export function ResumeProvider({ children }) {
   useEffect(() => {
     if (!userId) return
     let isCancelled = false
-    resumeService.getResumes(userId).then((list) => {
-      if (!isCancelled) setResumeState({ userId, list })
-    })
+    resumeService
+      .getResumes(userId)
+      .catch(() => []) // server not reachable: show an empty list instead of loading forever
+      .then((list) => {
+        if (!isCancelled) setResumeState({ userId, list })
+      })
     return () => {
       isCancelled = true
     }

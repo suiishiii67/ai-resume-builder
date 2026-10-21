@@ -1,4 +1,4 @@
-// Saves and loads data in the browser (localStorage).
+// Saves and loads small things in the browser (localStorage), like the login token.
 const PREFIX = 'arb_'
 
 export function loadFromStorage(key, fallbackValue) {
@@ -21,24 +21,6 @@ export function saveToStorage(key, value) {
 export function removeFromStorage(key) {
   try {
     localStorage.removeItem(PREFIX + key)
-  } catch {
-    // Storage blocked
-  }
-}
-
-// The first time, fill the list with the sample data
-export function loadCollection(key, seedData) {
-  const savedList = loadFromStorage(key, null)
-  if (savedList) return savedList
-  saveToStorage(key, seedData)
-  return seedData
-}
-
-export function resetAllData() {
-  try {
-    Object.keys(localStorage)
-      .filter((key) => key.startsWith(PREFIX))
-      .forEach((key) => localStorage.removeItem(key))
   } catch {
     // Storage blocked
   }

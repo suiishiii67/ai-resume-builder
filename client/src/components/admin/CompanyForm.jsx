@@ -40,7 +40,7 @@ function CompanyForm({ company, templates, onSave, onCancel, isSaving }) {
       return
     }
     const { keywordsText, ...rest } = formValues
-    onSave({ ...company, ...rest, name: rest.name.trim(), keywords: textToList(keywordsText), isSample: company?.isSample ?? false })
+    onSave({ ...company, ...rest, name: rest.name.trim(), keywords: textToList(keywordsText) })
   }
 
   return (

@@ -9,11 +9,14 @@ const mongoose = require('mongoose')
 const User = require('../models/User')
 const Resume = require('../models/Resume')
 const AtsCheck = require('../models/AtsCheck')
+const Company = require('../models/Company')
 
 const BASE_URL = `http://localhost:${process.env.PORT || 5001}`
 const TEST_EMAIL_PATTERN = /^check-.*@test\.local$/
 // Logged-out quick checks have no user, so the tests mark theirs with this job title to clean them up
 const TEST_JOB_TITLE = `Check script ${crypto.randomBytes(4).toString('hex')}`
+// Companies made by the catalog tests start with this name, so cleanup can find them
+const TEST_COMPANY_NAME = `Check company ${crypto.randomBytes(4).toString('hex')}`
 
 let passed = 0
 let failed = 0
@@ -61,6 +64,7 @@ async function cleanup() {
   await AtsCheck.deleteMany({ userId: { $in: testUserIds } })
   await User.deleteMany({ _id: { $in: testUserIds } })
   await AtsCheck.deleteMany({ userId: null, jobTitle: TEST_JOB_TITLE })
+  await Company.deleteMany({ name: { $regex: `^${TEST_COMPANY_NAME}` } })
   await mongoose.disconnect()
   if (testUsers.length > 0) console.log(`\nCleaned up ${testUsers.length} test user(s).`)
 }
@@ -420,6 +424,54 @@ async function runTests() {
     ])
     const login = await api('POST', '/api/auth/login', { email: owner.body.user.email, password })
     return removed.status === 200 && users === 0 && resumes === 0 && checks === 0 && login.status === 401
+  })
+
+  // ---------- Part 5: catalog (companies, roles, templates) ----------
+  console.log('\nCatalog')
+
+  await test('The catalog is public and has the seeded roles and templates', async () => {
+    const { status, body } = await api('GET', '/api/catalog')
+    return status === 200 && Array.isArray(body.companies) && body.roles.some((role) => role.id === 'frontend-developer') &&
+      body.templates.some((template) => template.id === 'classic' && template.layout === 'classic')
+  })
+
+  await test('A normal user gets 403 on the catalog admin routes', async () => {
+    const results = await Promise.all([
+      api('POST', '/api/admin/companies', { name: TEST_COMPANY_NAME }, intruderToken),
+      api('PUT', '/api/admin/roles/frontend-developer', { title: 'Hacked' }, intruderToken),
+      api('DELETE', '/api/admin/templates/classic', null, intruderToken),
+    ])
+    return results.every((result) => result.status === 403)
+  })
+
+  let companyId = ''
+  await test('Admin creates a company (gets a readable id)', async () => {
+    const company = { name: TEST_COMPANY_NAME, type: 'Product-based', emphasis: 'projects', keywords: ['scalable'], isSample: true }
+    const { status, body } = await api('POST', '/api/admin/companies', company, adminToken)
+    companyId = body.item && body.item.id
+    return status === 201 && companyId.startsWith('check-company-') && body.item.isSample === undefined && body.item._id === undefined
+  })
+
+  await test('Admin updates the company, and the public catalog shows the change', async () => {
+    const update = await api('PUT', `/api/admin/companies/${companyId}`, { name: `${TEST_COMPANY_NAME} updated` }, adminToken)
+    const catalog = await api('GET', '/api/catalog')
+    return update.status === 200 && catalog.body.companies.some((company) => company.id === companyId && company.name.endsWith('updated'))
+  })
+
+  await test('A company without a name is rejected (400)', async () => {
+    const { status } = await api('POST', '/api/admin/companies', { name: '  ' }, adminToken)
+    return status === 400
+  })
+
+  await test('Admin deletes the company', async () => {
+    const removed = await api('DELETE', `/api/admin/companies/${companyId}`, null, adminToken)
+    const again = await api('DELETE', `/api/admin/companies/${companyId}`, null, adminToken)
+    return removed.status === 200 && again.status === 404
+  })
+
+  await test('A resume can use any template id from the catalog', async () => {
+    const { status, body } = await api('POST', '/api/resumes', { title: 'Template test', templateId: 'my-new-template' }, intruderToken)
+    return status === 201 && body.resume.templateId === 'my-new-template'
   })
 
   // ---------- Part 4: AI ----------

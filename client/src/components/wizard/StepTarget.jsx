@@ -7,7 +7,7 @@ import { guessJobTitle } from '../../utils/jobDescription'
 function StepTarget({ target, onTargetChange, companies, roles, errors, company, role, templateName }) {
   const companyOptions = companies.map((item) => ({ id: item.id, label: item.name, meta: item.type }))
   const roleOptions = roles.map((item) => ({ id: item.id, label: item.title, meta: item.category }))
-  // Only show the sample company profile when one of our sample companies is picked
+  // Only show the company profile when a company from our list is picked
   const showInsight = target.companyId && target.roleTitle.trim()
 
   // Fill the job title from the first line of the job description, if it is still empty
@@ -45,7 +45,7 @@ function StepTarget({ target, onTargetChange, companies, roles, errors, company,
           value={target.companyName}
           options={companyOptions}
           placeholder="e.g. Infosys"
-          hint="Type any company, or pick a sample one."
+          hint="Type any company, or pick one from the list."
           // Typing clears the id, so the text can be any company
           onTextChange={(text) => onTargetChange({ ...target, companyName: text, companyId: '' })}
           onSelect={(option) => onTargetChange({ ...target, companyName: option.label, companyId: option.id })}

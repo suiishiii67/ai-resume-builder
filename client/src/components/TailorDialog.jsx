@@ -7,7 +7,7 @@ import { useCatalog } from '../context/CatalogContext'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { tailorSummary } from '../services/aiService'
-import { findSkillsInText, textHasSkill, guessJobTitle } from '../utils/jobDescription'
+import { findSkillsInText, textHasSkill, guessJobTitle, buildJobDescription, getJobText } from '../utils/jobDescription'
 import { resumeToPlainText } from '../utils/keywordUtils'
 import { calculateAtsScore } from '../utils/atsScore'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
@@ -71,17 +71,21 @@ function TailorDialog({ resume, onClose }) {
       roleId: role.id,
       roleTitle: role.title,
       skills,
-      jobDescription: job.jobDescription.trim(),
-      jobSkills,
+      jobDescription: buildJobDescription(job.jobDescription, { title: job.jobTitle, company: job.companyName }),
       tailoredFrom: resume.id,
     }
-    const { summary } = await tailorSummary(copy, job.jobDescription)
-    const newResume = await createResume({ ...copy, summary })
+    try {
+      const { summary } = await tailorSummary(copy, job.jobDescription)
+      const newResume = await createResume({ ...copy, summary })
 
-    const report = calculateAtsScore(newResume, newResume.jobDescription)
-    await saveScore(newResume.id, report.score)
-    showToast(`Tailored copy created. New ATS score: ${report.score}/100. Your original resume is unchanged.`)
-    navigate(`/editor/${newResume.id}`)
+      const report = calculateAtsScore(newResume, getJobText(newResume))
+      await saveScore(newResume.id, report.score)
+      showToast(`Tailored copy created. New ATS score: ${report.score}/100. Your original resume is unchanged.`)
+      navigate(`/editor/${newResume.id}`)
+    } catch (error) {
+      showToast(error.message, 'error')
+      setIsCreating(false)
+    }
   }
 
   const footer =
