@@ -110,7 +110,14 @@ ai-resume-builder/
 │       ├── utils/              atsScore, jobDescription, resumeImport, validation, keywordUtils …
 │       ├── data/               skillsList, sample resumes, companies, roles, templates, job descriptions
 │       └── context/            logged-in user, resumes, catalog, toasts
-├── server/                     backend (Phase 2)
+├── server/                     Express + MongoDB backend (Phase 2, in progress)
+│   ├── server.js               starts Express and connects to MongoDB
+│   ├── config/                 database connection
+│   ├── models/                 User, Resume, AtsCheck (Mongoose)
+│   ├── middleware/             404 and error handler
+│   ├── controllers/, routes/   API code (added part by part)
+│   ├── seed/                   site configuration, if the server needs it (no fake data)
+│   └── scripts/                create-admin.js, check.js (tests)
 └── docs/screenshots/
 ```
 
@@ -138,6 +145,52 @@ Open http://localhost:5173.
 Import the GitHub repo in Vercel, set **Root Directory** to `client`, and deploy. Vercel detects Vite
 automatically; `client/vercel.json` makes links like `/dashboard` work when the page is refreshed.
 
+## Backend
+
+The backend runs only on your laptop. Requirements: Node.js 20+ and MongoDB Community Server.
+
+```bash
+# 1. Start MongoDB (macOS with Homebrew; on Windows it runs as a service after install)
+brew services start mongodb-community
+
+# 2. Install and configure
+cd server
+npm install
+cp .env.example .env        # then fill in JWT_SECRET and the ADMIN_ values
+
+# 3. Create the admin account (from ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD in .env)
+npm run create-admin
+
+# 4. Start the server, then run the tests in a second terminal
+npm run dev
+npm run check
+```
+
+The API runs on http://localhost:5001 (`GET /api/health` should return `{ "ok": true, "db": "connected" }`).
+Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
+
+| Command (inside `server/`) | What it does |
+|---|---|
+| `npm run dev` | Start the server and restart it when a file changes (nodemon) |
+| `npm start` | Start the server |
+| `npm run create-admin` | Create the admin account, or make that email an admin if it already exists |
+| `npm run check` | Test the running server and print PASS / FAIL for each test |
+
+**No demo data.** The database starts empty: real users sign up and import their own resumes. The only
+account the backend creates is the admin from `.env`. `npm run check` makes temporary users
+(`check-<random>@test.local`) and deletes them, with their resumes and ATS checks, when it finishes.
+
+### Frontend to-do for Part 5 (connecting the frontend)
+
+- Send `jobDescription` as an object `{ text, title, company, skills }` instead of a plain string plus a
+  separate `jobSkills` array. This is the shape the backend stores.
+- Remove the demo login buttons ("Fill demo user").
+- Remove the admin **Reset demo data** button.
+- Remove the "Use a sample job description" buttons.
+- Remove the demo resumes and demo accounts in `client/src/data/` (`sampleResumes.js`, `users.js`) and
+  update the Demo accounts section below.
+- Point the API calls at `http://localhost:5001`.
+
 ## Demo accounts
 
 | Account | Email | Password |
@@ -163,6 +216,6 @@ The demo user has a complete B.Tech CSE fresher resume and a copy tailored for a
 | Phase | Scope | Status |
 |---|---|---|
 | Phase 1 | Frontend: all pages, import, job description matching, ATS score, tailoring | **Done** |
-| Phase 2 | Backend: Node.js + Express REST API, MongoDB, real login (bcrypt, JWT) | Planned |
+| Phase 2 | Backend: Node.js + Express REST API, MongoDB, real login (bcrypt, JWT) | In progress |
 | Phase 3 | Real AI model behind `aiService.js`, called from the backend | Planned |
 | Phase 4 | Testing and deployment | Planned |
