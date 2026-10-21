@@ -7,7 +7,6 @@ import { saveCompany, deleteCompany } from '../../services/catalogService'
 import { SECTION_LABELS } from '../../data/sections'
 import PageHeader from '../../components/PageHeader'
 import Button from '../../components/Button'
-import StatusStamp from '../../components/StatusStamp'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import DataTable from '../../components/admin/DataTable'
 import CompanyForm from '../../components/admin/CompanyForm'
@@ -22,17 +21,25 @@ function ManageCompaniesPage() {
 
   const handleSave = async (company) => {
     setIsSaving(true)
-    setCompanies(await saveCompany(company))
+    try {
+      setCompanies(await saveCompany(company))
+      setEditingCompany(null)
+      showToast(`Saved ${company.name}. The wizard and editor now use this profile.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
     setIsSaving(false)
-    setEditingCompany(null)
-    showToast(`Saved ${company.name}. The wizard and editor now use this profile.`)
   }
 
   const handleDelete = async () => {
     const { id, name } = companyToDelete
     setCompanyToDelete(null)
-    setCompanies(await deleteCompany(id))
-    showToast(`Deleted ${name}.`)
+    try {
+      setCompanies(await deleteCompany(id))
+      showToast(`Deleted ${name}.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
   }
 
   const columns = [
@@ -43,7 +50,6 @@ function ManageCompaniesPage() {
         <div>
           <p className="font-semibold">{company.name}</p>
           <p className="text-sm text-ink-faint">{company.type} · {company.industry}</p>
-          {company.isSample && <StatusStamp className="mt-1">Sample</StatusStamp>}
         </div>
       ),
     },

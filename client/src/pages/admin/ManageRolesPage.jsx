@@ -20,17 +20,25 @@ function ManageRolesPage() {
 
   const handleSave = async (role) => {
     setIsSaving(true)
-    setRoles(await saveRole(role))
+    try {
+      setRoles(await saveRole(role))
+      setEditingRole(null)
+      showToast(`Saved ${role.title}.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
     setIsSaving(false)
-    setEditingRole(null)
-    showToast(`Saved ${role.title}.`)
   }
 
   const handleDelete = async () => {
     const { id, title } = roleToDelete
     setRoleToDelete(null)
-    setRoles(await deleteRole(id))
-    showToast(`Deleted ${title}.`)
+    try {
+      setRoles(await deleteRole(id))
+      showToast(`Deleted ${title}.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
   }
 
   const columns = [

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 function StatStrip({ stats }) {
   return (
-    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border-[3px] border-ink bg-paper sm:grid-cols-3 xl:grid-cols-5">
+    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border-[3px] border-ink bg-paper sm:grid-cols-3 xl:grid-cols-6">
       {stats.map((stat) => (
         <div key={stat.label} className="border-b border-line px-4 py-4 last:border-b-0 sm:border-r xl:border-b-0 xl:last:border-r-0">
           <dt className="board-text text-[13px] text-ink-soft">{stat.label}</dt>

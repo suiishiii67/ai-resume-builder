@@ -1,35 +1,26 @@
-// Numbers for the admin dashboard (mock).
-import { getAllUsers } from './authService'
-import { getAllResumes } from './resumeService'
-import { getCatalog } from './catalogService'
+// Admin dashboard: statistics and user management (/api/admin). Only works for the admin.
+import { apiRequest } from './api'
 
-export async function getAdminStats() {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const [users, resumes, catalog] = await Promise.all([getAllUsers(), getAllResumes(), getCatalog()])
+// { totals, averageAtsScore, topMissingSkills, topJobTitles, resumesByCreatedVia, resumesPerCompany,
+//   checkedResumes, latestResumes }, worked out by MongoDB on the server
+export function getAdminStats() {
+  return apiRequest('GET', '/admin/stats')
+}
 
-  const checkedResumes = resumes.filter((resume) => typeof resume.atsScore === 'number')
-  const averageAtsScore = checkedResumes.length
-    ? Math.round(checkedResumes.reduce((total, resume) => total + resume.atsScore, 0) / checkedResumes.length)
-    : null
+// Every user with their number of resumes
+export async function getUsers() {
+  const { users } = await apiRequest('GET', '/admin/users')
+  return users
+}
 
-  const resumesPerCompany = {}
-  resumes.forEach((resume) => {
-    const companyName = resume.companyName || 'No company yet'
-    resumesPerCompany[companyName] = (resumesPerCompany[companyName] || 0) + 1
-  })
+// Blocks the user, or unblocks them if they are already blocked. Returns the updated user.
+export async function toggleBlockUser(userId) {
+  const { user } = await apiRequest('PATCH', `/admin/users/${userId}/block`)
+  return user
+}
 
-  return {
-    totals: {
-      users: users.filter((user) => user.role !== 'admin').length,
-      resumes: resumes.length,
-      templates: catalog.templates.length,
-      companies: catalog.companies.length,
-      roles: catalog.roles.length,
-    },
-    averageAtsScore,
-    checkedCount: checkedResumes.length,
-    resumesPerCompany,
-    recentResumes: [...resumes].sort((first, second) => second.updatedAt.localeCompare(first.updatedAt)).slice(0, 5),
-    users,
-  }
+// Deletes the user with all their resumes and ATS checks
+export async function deleteUser(userId) {
+  await apiRequest('DELETE', `/admin/users/${userId}`)
+  return true
 }
