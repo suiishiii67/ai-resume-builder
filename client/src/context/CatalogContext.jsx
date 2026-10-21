@@ -9,10 +9,11 @@ export function CatalogProvider({ children }) {
   const [isCatalogLoading, setIsCatalogLoading] = useState(true)
 
   useEffect(() => {
-    getCatalog().then((loadedCatalog) => {
-      setCatalog(loadedCatalog)
-      setIsCatalogLoading(false)
-    })
+    getCatalog()
+      .then(setCatalog)
+      // Server not reachable: keep empty lists, so pages still open (and show their own messages)
+      .catch(() => {})
+      .finally(() => setIsCatalogLoading(false))
   }, [])
 
   const value = useMemo(

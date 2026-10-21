@@ -1,93 +1,43 @@
-// Mock login, signup and profile. Accounts are saved in the browser.
-import seedUsers from '../data/users'
-import { loadCollection, saveToStorage, loadFromStorage, removeFromStorage } from '../utils/storage'
-import { simulateRequest, simulateError, createId } from '../utils/mockApi'
+// Login, signup and profile, using the backend (/api/auth and /api/users).
+import { apiRequest, getToken, saveToken, clearToken } from './api'
 
-const USERS_KEY = 'users'
-const SESSION_KEY = 'session'
-
-function getStoredUsers() {
-  return loadCollection(USERS_KEY, seedUsers)
+// Returns the user. The token is saved so the user stays logged in after a refresh.
+export async function login(email, password) {
+  const { token, user } = await apiRequest('POST', '/auth/login', { email: email.trim(), password })
+  saveToken(token)
+  return user
 }
 
-// Never send the password to the UI
-function withoutPassword(user) {
-  const { password: _password, ...safeUser } = user
-  return safeUser
+export async function signup({ name, email, password }) {
+  const { token, user } = await apiRequest('POST', '/auth/signup', { name: name.trim(), email: email.trim(), password })
+  saveToken(token)
+  return user
 }
 
-function findUserByEmail(users, email) {
-  return users.find((user) => user.email.toLowerCase() === email.trim().toLowerCase())
+// The server keeps no sessions, so logging out just forgets the token
+export async function logout() {
+  clearToken()
 }
 
-export function login(email, password) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const user = findUserByEmail(getStoredUsers(), email)
-  if (!user || user.password !== password) {
-    return simulateError('Incorrect email or password. Check both and try again.')
+// The logged-in user, or null (no token, or the token is no longer valid)
+export async function getCurrentUser() {
+  if (!getToken()) return null
+  try {
+    const { user } = await apiRequest('GET', '/auth/me')
+    return user
+  } catch {
+    clearToken()
+    return null
   }
-  saveToStorage(SESSION_KEY, { userId: user.id })
-  return simulateRequest(withoutPassword(user), 600)
 }
 
-export function signup({ name, email, password }) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const users = getStoredUsers()
-  if (findUserByEmail(users, email)) {
-    return simulateError('An account with this email already exists. Log in instead.')
-  }
-  const newUser = {
-    id: createId('user'),
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    password,
-    role: 'user',
-    createdAt: new Date().toISOString(),
-  }
-  saveToStorage(USERS_KEY, [...users, newUser])
-  saveToStorage(SESSION_KEY, { userId: newUser.id })
-  return simulateRequest(withoutPassword(newUser), 700)
+// userId is not needed: the server knows the user from the token
+export async function updateProfile(_userId, { name, email }) {
+  const { user } = await apiRequest('PATCH', '/users/me', { name, email })
+  return user
 }
 
-export function logout() {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  removeFromStorage(SESSION_KEY)
-  return simulateRequest(true, 150)
-}
-
-export function getCurrentUser() {
-  // TODO (Phase 2): replace mock with real API call to the Express backend (GET /api/auth/me)
-  const session = loadFromStorage(SESSION_KEY, null)
-  const user = session && getStoredUsers().find((storedUser) => storedUser.id === session.userId)
-  return simulateRequest(user ? withoutPassword(user) : null, 250)
-}
-
-export function updateProfile(userId, { name, email }) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const users = getStoredUsers()
-  const emailOwner = findUserByEmail(users, email)
-  if (emailOwner && emailOwner.id !== userId) {
-    return simulateError('Another account already uses this email.')
-  }
-  const updatedUsers = users.map((user) =>
-    user.id === userId ? { ...user, name: name.trim(), email: email.trim().toLowerCase() } : user
-  )
-  saveToStorage(USERS_KEY, updatedUsers)
-  return simulateRequest(withoutPassword(updatedUsers.find((user) => user.id === userId)), 500)
-}
-
-export function changePassword(userId, currentPassword, newPassword) {
-  // TODO (Phase 2): replace mock with real API call to the Express backend
-  const users = getStoredUsers()
-  const user = users.find((storedUser) => storedUser.id === userId)
-  if (!user || user.password !== currentPassword) {
-    return simulateError('Your current password is incorrect.')
-  }
-  saveToStorage(USERS_KEY, users.map((storedUser) => (storedUser.id === userId ? { ...storedUser, password: newPassword } : storedUser)))
-  return simulateRequest(true, 500)
-}
-
-export function getAllUsers() {
-  // TODO (Phase 2): replace mock with real API call to the Express backend (admin only)
-  return simulateRequest(getStoredUsers().map(withoutPassword), 300)
+export async function changePassword(_userId, currentPassword, newPassword) {
+  await apiRequest('PATCH', '/users/me/password', { currentPassword, newPassword })
+  return true
 }

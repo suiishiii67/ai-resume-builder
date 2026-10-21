@@ -47,15 +47,23 @@ function DashboardPage() {
   }
 
   const handleDuplicate = async (resume) => {
-    await duplicateResume(resume.id)
-    showToast(`Copied “${resume.title}”. Retarget the copy for your next application.`)
+    try {
+      await duplicateResume(resume.id)
+      showToast(`Copied “${resume.title}”. Retarget the copy for your next application.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
   }
 
   const handleConfirmDelete = async () => {
     const { id, title } = resumeToDelete
     setResumeToDelete(null)
-    await deleteResume(id)
-    showToast(`Deleted “${title}”.`)
+    try {
+      await deleteResume(id)
+      showToast(`Deleted “${title}”.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
   }
 
   const companyNames = [...new Set(resumes.map((resume) => resume.companyName).filter(Boolean))].sort()

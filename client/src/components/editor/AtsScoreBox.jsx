@@ -1,10 +1,11 @@
 // Small live ATS score in the editor. It updates as the user types.
 import { ScanSearch } from 'lucide-react'
 import { calculateAtsScore } from '../../utils/atsScore'
+import { getJobText } from '../../utils/jobDescription'
 import { getScoreBand } from '../../utils/scoreBand'
 
 function AtsScoreBox({ resumeData, onOpenReport }) {
-  const report = calculateAtsScore(resumeData, resumeData.jobDescription)
+  const report = calculateAtsScore(resumeData, getJobText(resumeData))
   const band = getScoreBand(report.score)
 
   return (

@@ -9,7 +9,7 @@ import { useToast } from '../context/ToastContext'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import { validateRequiredFields, validateBasicsForm, validateEntry, hasErrors } from '../utils/validation'
 import { buildResumeDraft, generateResume } from '../services/aiService'
-import { findSkillsInText } from '../utils/jobDescription'
+import { findSkillsInText, buildJobDescription } from '../utils/jobDescription'
 import { SECTION_LABELS } from '../data/sections'
 import PageHeader from '../components/PageHeader'
 import TargetStrip from '../components/TargetStrip'
@@ -96,16 +96,20 @@ function CreateResumePage() {
     }
 
     setIsGenerating(true)
-    // Uses only what the user typed
-    const draft = await generateResume({ basics, company, role, companyName, templateId: selectedTemplate.id, jobDescription: target.jobDescription })
-    const newResume = await createResume({
-      ...draft,
-      jobDescription: target.jobDescription.trim(),
-      jobSkills: findSkillsInText(target.jobDescription),
-      createdVia: 'form',
-    })
-    showToast('Draft ready. Review it, then check your ATS score.')
-    navigate(`/editor/${newResume.id}`)
+    try {
+      // Uses only what the user typed
+      const draft = await generateResume({ basics, company, role, companyName, templateId: selectedTemplate.id, jobDescription: target.jobDescription })
+      const newResume = await createResume({
+        ...draft,
+        jobDescription: buildJobDescription(target.jobDescription, { title: role.title, company: companyName }),
+        createdVia: 'form',
+      })
+      showToast('Draft ready. Review it, then check your ATS score.')
+      navigate(`/editor/${newResume.id}`)
+    } catch (error) {
+      showToast(error.message, 'error')
+      setIsGenerating(false)
+    }
   }
 
   if (isCatalogLoading) return <PageLoader message="Loading companies and roles…" />

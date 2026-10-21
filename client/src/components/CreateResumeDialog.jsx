@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { FileUp, ListChecks, FilePlus2, ChevronRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useResumes } from '../context/ResumeContext'
+import { useToast } from '../context/ToastContext'
 import { createBlankResume } from '../utils/resumeImport'
 import Modal from './Modal'
 import Spinner from './Spinner'
@@ -26,6 +27,7 @@ function CreateOption({ icon, title, description, onClick, isLoading }) {
 function CreateResumeDialog({ onClose }) {
   const { user } = useAuth()
   const { createResume } = useResumes()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [isCreatingBlank, setIsCreatingBlank] = useState(false)
 
@@ -33,16 +35,23 @@ function CreateResumeDialog({ onClose }) {
   const handleStartBlank = async () => {
     setIsCreatingBlank(true)
     const blank = createBlankResume()
-    const newResume = await createResume({
-      ...blank,
-      title: 'Untitled resume',
-      companyId: '',
-      companyName: '',
-      roleId: '',
-      roleTitle: '',
-      personal: { ...blank.personal, fullName: user.name, email: user.email },
-      createdVia: 'blank',
-    })
+    let newResume
+    try {
+      newResume = await createResume({
+        ...blank,
+        title: 'Untitled resume',
+        companyId: '',
+        companyName: '',
+        roleId: '',
+        roleTitle: '',
+        personal: { ...blank.personal, fullName: user.name, email: user.email },
+        createdVia: 'blank',
+      })
+    } catch (error) {
+      showToast(error.message, 'error')
+      setIsCreatingBlank(false)
+      return
+    }
     navigate(`/editor/${newResume.id}`)
   }
 

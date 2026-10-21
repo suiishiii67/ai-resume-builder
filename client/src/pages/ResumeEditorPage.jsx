@@ -8,6 +8,7 @@ import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { getResumeById } from '../services/resumeService'
 import { improveSection } from '../services/aiService'
+import { getJobText } from '../utils/jobDescription'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
 import { getTemplateLayout } from '../utils/resumeFormat'
 import { findResumeErrors } from '../utils/validation'
@@ -96,7 +97,7 @@ function ResumeEditorPage() {
   const handleImprove = async (sectionKey) => {
     const previousValue = resumeData[sectionKey]
     setImprovingSection(sectionKey)
-    const result = await improveSection(sectionKey, previousValue, resumeData.jobDescription)
+    const result = await improveSection(sectionKey, previousValue, getJobText(resumeData))
     setImprovingSection('')
     handleSectionChange(sectionKey, result.value)
     setOpenSections((open) => (open.includes(sectionKey) ? open : [...open, sectionKey]))
@@ -121,12 +122,18 @@ function ResumeEditorPage() {
       return false
     }
     setIsSaving(true)
-    const savedResume = await saveResume(resumeData.id, resumeData)
-    setResumeData(savedResume)
-    setSavedSnapshot(JSON.stringify(savedResume))
-    setIsSaving(false)
-    showToast('Resume saved.')
-    return true
+    try {
+      const savedResume = await saveResume(resumeData.id, resumeData)
+      setResumeData(savedResume)
+      setSavedSnapshot(JSON.stringify(savedResume))
+      showToast('Resume saved.')
+      return true
+    } catch (error) {
+      showToast(error.message, 'error')
+      return false
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // The ATS checker reads the saved version, so save first

@@ -1,14 +1,11 @@
 // ATS Checker page (/ats-checker): check a saved resume, or upload one (quick check).
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { ScanSearch, ClipboardList, FileText, FileUp } from 'lucide-react'
+import { ScanSearch, FileText, FileUp } from 'lucide-react'
 import { useResumes } from '../context/ResumeContext'
-import { useCatalog } from '../context/CatalogContext'
 import { useToast } from '../context/ToastContext'
 import { analyzeResume, saveAtsCheck } from '../services/atsService'
-import { resolveRole } from '../utils/targetProfile'
-import { findSkillsInText } from '../utils/jobDescription'
-import sampleJobDescriptions from '../data/sampleJobDescriptions'
+import { buildJobDescription, getJobText } from '../utils/jobDescription'
 import PageHeader from '../components/PageHeader'
 import PageLoader from '../components/PageLoader'
 import EmptyState from '../components/EmptyState'
@@ -25,7 +22,6 @@ const MIN_JD_LENGTH = 80
 // Option 1: check one of the user's saved resumes
 function SavedResumeCheck() {
   const { resumes, isResumesLoading, saveScore } = useResumes()
-  const { roles } = useCatalog()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
 
@@ -42,13 +38,11 @@ function SavedResumeCheck() {
   }
 
   const resume = resumes.find((item) => item.id === selectedId) || resumes[0]
-  const role = resolveRole(roles, resume.roleId, resume.roleTitle)
-  const sampleJd = sampleJobDescriptions[role.id]
 
   // Start with the job description saved on this resume
   if (jobDescriptionFor !== resume.id) {
     setJobDescriptionFor(resume.id)
-    setJobDescription(resume.jobDescription || '')
+    setJobDescription(getJobText(resume))
   }
 
   const handleResumeChange = (event) => {
@@ -64,14 +58,18 @@ function SavedResumeCheck() {
     }
     setJdError('')
     setIsAnalyzing(true)
-    const newReport = await analyzeResume({ resume, jobDescription })
-    // Keep the job description on the resume, so the editor shows its skills
-    const jobDetails = jdLength ? { jobDescription: jobDescription.trim(), jobSkills: findSkillsInText(jobDescription) } : {}
-    await saveScore(resume.id, newReport.score, jobDetails)
-    await saveAtsCheck({ source: 'saved', userId: resume.userId, resumeId: resume.id, score: newReport.score, jobTitle: newReport.jobTitle, hasJobDescription: newReport.hasJobDescription })
-    setReport(newReport)
+    try {
+      const newReport = await analyzeResume({ resume, jobDescription })
+      // Keep the job description on the resume, so the editor shows its skills
+      const jobDetails = jdLength ? { jobDescription: buildJobDescription(jobDescription, { title: newReport.jobTitle, company: resume.companyName }) } : {}
+      await saveScore(resume.id, newReport.score, jobDetails)
+      await saveAtsCheck({ source: 'saved', resumeId: resume.id, score: newReport.score, jobTitle: newReport.jobTitle, hasJobDescription: newReport.hasJobDescription, missingSkills: newReport.missingSkills })
+      setReport(newReport)
+      showToast(`ATS score ${newReport.score}/100 saved to this resume.`)
+    } catch (error) {
+      showToast(error.message, 'error')
+    }
     setIsAnalyzing(false)
-    showToast(`ATS score ${newReport.score}/100 saved to this resume.`)
   }
 
   return (
@@ -82,16 +80,9 @@ function SavedResumeCheck() {
           <Select id="ats-resume" label="Resume to check" value={resume.id} onChange={handleResumeChange} options={resumes.map((item) => ({ value: item.id, label: item.title }))} />
           <TargetStrip companyName={resume.companyName} roleTitle={resume.roleTitle} />
           <JobDescriptionBox id="job-description" value={jobDescription} onChange={setJobDescription} error={jdError} rows={11} optional />
-          <div className="flex flex-wrap gap-2">
-            <Button size="lg" onClick={handleCheck} loading={isAnalyzing}>
-              {!isAnalyzing && <ScanSearch size={18} aria-hidden="true" />} Check ATS score
-            </Button>
-            {sampleJd && (
-              <Button variant="secondary" size="lg" onClick={() => setJobDescription(sampleJd)}>
-                <ClipboardList size={18} aria-hidden="true" /> Use a sample job description
-              </Button>
-            )}
-          </div>
+          <Button size="lg" onClick={handleCheck} loading={isAnalyzing}>
+            {!isAnalyzing && <ScanSearch size={18} aria-hidden="true" />} Check ATS score
+          </Button>
         </section>
 
         <div>

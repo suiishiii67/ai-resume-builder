@@ -103,18 +103,23 @@ function ImportResumePage() {
     const title = [company?.name, role?.title].filter(Boolean).join(' – ') || `${draft.personal.fullName || 'My'} resume`.trim()
 
     setIsSaving(true)
-    const newResume = await createResume({
-      ...draft,
-      title,
-      templateId: company && !company.isCustom ? company.preferredTemplate : draft.templateId,
-      companyId: company?.id || '',
-      companyName: company?.name || '',
-      roleId: role?.id || '',
-      roleTitle: role?.title || '',
-      createdVia: 'import',
-    })
-    showToast('Resume imported. Check the preview, then save.')
-    navigate(`/editor/${newResume.id}`)
+    try {
+      const newResume = await createResume({
+        ...draft,
+        title,
+        templateId: company && !company.isCustom ? company.preferredTemplate : draft.templateId,
+        companyId: company?.id || '',
+        companyName: company?.name || '',
+        roleId: role?.id || '',
+        roleTitle: role?.title || '',
+        createdVia: 'import',
+      })
+      showToast('Resume imported. Check the preview, then save.')
+      navigate(`/editor/${newResume.id}`)
+    } catch (error) {
+      showToast(error.message, 'error')
+      setIsSaving(false)
+    }
   }
 
   // ---------- Step 1: choose a file or paste text ----------

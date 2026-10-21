@@ -3,14 +3,14 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { getTargetKeywords } from '../../utils/targetProfile'
 import { resumeToText, resumeToPlainText, containsKeyword } from '../../utils/keywordUtils'
-import { textHasSkill } from '../../utils/jobDescription'
+import { textHasSkill, getJobSkills } from '../../utils/jobDescription'
 import KeywordChips from '../KeywordChips'
 
 function KeywordPanel({ company, role, resumeData, onAddSkill }) {
   const [isOpen, setIsOpen] = useState(true)
 
   // With a job description: its skills. Older resumes: the sample role and company keywords.
-  const jobSkills = resumeData.jobSkills || []
+  const jobSkills = getJobSkills(resumeData)
   const hasJobSkills = jobSkills.length > 0
   // No job description and no sample role: nothing to compare against yet
   if (!hasJobSkills && role.isCustom) {
