@@ -11,16 +11,19 @@ export const clearToken = () => removeFromStorage(TOKEN_KEY)
 
 // Sends a request and returns the JSON answer.
 // On an error it throws Error(message) with the server's own message, so pages can show it.
-export async function apiRequest(method, path, body) {
+// timeoutMs (optional): give up after this long, e.g. for slow AI requests.
+export async function apiRequest(method, path, body, { timeoutMs } = {}) {
   const token = getToken()
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
+  const signal = timeoutMs ? AbortSignal.timeout(timeoutMs) : undefined
 
   let response
   try {
-    response = await fetch(API_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined })
-  } catch {
-    throw new Error("Can't reach the server. Is it running?")
+    response = await fetch(API_URL + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal })
+  } catch (fetchError) {
+    if (fetchError.name === 'TimeoutError') throw new Error('The request took too long. Please try again.', { cause: fetchError })
+    throw new Error("Can't reach the server. Is it running?", { cause: fetchError })
   }
 
   const data = await response.json().catch(() => ({}))
