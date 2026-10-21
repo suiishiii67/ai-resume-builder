@@ -1,0 +1,9 @@
+// Connects to MongoDB using MONGO_URI from .env
+const mongoose = require('mongoose')
+
+async function connectDB() {
+  await mongoose.connect(process.env.MONGO_URI)
+  console.log(`MongoDB connected: ${mongoose.connection.name}`)
+}
+
+module.exports = connectDB
