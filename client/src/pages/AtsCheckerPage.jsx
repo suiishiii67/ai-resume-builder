@@ -16,6 +16,7 @@ import Spinner from '../components/Spinner'
 import TargetStrip from '../components/TargetStrip'
 import AtsResultPanel from '../components/ats/AtsResultPanel'
 import QuickCheckPanel from '../components/ats/QuickCheckPanel'
+import JobInsights from '../components/JobInsights'
 
 const MIN_JD_LENGTH = 80
 
@@ -65,7 +66,7 @@ function SavedResumeCheck() {
       await saveScore(resume.id, newReport.score, jobDetails)
       await saveAtsCheck({ source: 'saved', resumeId: resume.id, score: newReport.score, jobTitle: newReport.jobTitle, hasJobDescription: newReport.hasJobDescription, missingSkills: newReport.missingSkills })
       setReport(newReport)
-      showToast(`ATS score ${newReport.score}/100 saved to this resume.`)
+      showToast(`Match estimate ${newReport.score}/100 saved to this resume.`)
     } catch (error) {
       showToast(error.message, 'error')
     }
@@ -80,8 +81,9 @@ function SavedResumeCheck() {
           <Select id="ats-resume" label="Resume to check" value={resume.id} onChange={handleResumeChange} options={resumes.map((item) => ({ value: item.id, label: item.title }))} />
           <TargetStrip companyName={resume.companyName} roleTitle={resume.roleTitle} />
           <JobDescriptionBox id="job-description" value={jobDescription} onChange={setJobDescription} error={jdError} rows={11} optional />
+          <JobInsights jobDescription={jobDescription} />
           <Button size="lg" onClick={handleCheck} loading={isAnalyzing}>
-            {!isAnalyzing && <ScanSearch size={18} aria-hidden="true" />} Check ATS score
+            {!isAnalyzing && <ScanSearch size={18} aria-hidden="true" />} Check match estimate
           </Button>
         </section>
 
