@@ -115,7 +115,7 @@ ai-resume-builder/
 │   ├── config/                 database connection
 │   ├── models/                 User, Resume, AtsCheck (Mongoose)
 │   ├── middleware/             login checks (protect, adminOnly), 404 and error handler
-│   ├── controllers/, routes/   API code: auth, users (more added part by part)
+│   ├── controllers/, routes/   API code: auth, users, resumes, ats, admin
 │   ├── utils/                  validators (same rules as the frontend)
 │   ├── seed/                   site configuration, if the server needs it (no fake data)
 │   └── scripts/                create-admin.js, check.js (tests)
@@ -192,9 +192,37 @@ sent back.
 | GET | `/api/auth/me` | Login | | `{ user }` |
 | PATCH | `/api/users/me` | Login | `{ name, email }` | `{ user }` |
 | PATCH | `/api/users/me/password` | Login | `{ currentPassword, newPassword }` | `{ message }` |
+| GET | `/api/resumes` | Login | | `{ resumes }` (my own, newest edited first) |
+| GET | `/api/resumes/:id` | Login | | `{ resume }` |
+| POST | `/api/resumes` | Login | resume fields (`title` required) | `{ resume }` |
+| PUT | `/api/resumes/:id` | Login | the fields to change | `{ resume }` |
+| DELETE | `/api/resumes/:id` | Login | | `{ message }` |
+| POST | `/api/resumes/:id/duplicate` | Login | | `{ resume }` ("… (copy)", no ATS score) |
+| PATCH | `/api/resumes/:id/ats-score` | Login | `{ score }` (0–100) | `{ resume }` |
+| POST | `/api/ats/checks` | Public or login | `{ source, resumeId, score, jobTitle, hasJobDescription, missingSkills }` | `{ check }` |
+| GET | `/api/admin/stats` | Admin | | `{ totals, averageAtsScore, topMissingSkills, topJobTitles, resumesByCreatedVia, latestResumes }` |
+| GET | `/api/admin/users` | Admin | | `{ users }` (each with `resumeCount`) |
+| PATCH | `/api/admin/users/:id/block` | Admin | | `{ user }` (blocks, or unblocks if blocked) |
+| DELETE | `/api/admin/users/:id` | Admin | | `{ message }` (also deletes their resumes and ATS checks) |
+| GET | `/api/admin/resumes` | Admin | | `{ resumes }` (newest 100, with `owner: { name, email }`) |
+| GET | `/api/admin/ats-checks` | Admin | | `{ checks }` (newest 100) |
 
 Status codes: `400` invalid input or email already used, `401` not logged in / wrong email or password,
-`403` account blocked or not an admin, `404` unknown route.
+`403` account blocked or not an admin, `404` unknown route or a resume that isn't yours, `429` too many
+quick checks.
+
+Rules worth knowing:
+
+- **Your own resumes only.** Every resume query includes your user id, so someone else's resume gives the
+  same `404 Resume not found` as one that doesn't exist. `userId`, `atsScore` and `atsCheckedAt` can't be
+  set through create/update; the score is saved only through `/ats-score`.
+- **Resume limits:** title up to 120 characters, up to 50 skills and 20 entries per section, job
+  description text up to 15,000 characters. Phone: Indian mobile, or international with a country code
+  (`+44 20 7946 0958`).
+- **ATS check records keep only the result** (score, job title, missing skills), never the resume or job
+  description text. Without login the source must be `quick` and no `resumeId` is allowed; these checks are
+  limited to 30 per hour per IP address.
+- **Admins** can't block or delete their own account or another admin.
 
 **No demo data.** The database starts empty: real users sign up and import their own resumes. The only
 account the backend creates is the admin from `.env`. `npm run check` makes temporary users
