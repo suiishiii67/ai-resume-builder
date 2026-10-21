@@ -114,8 +114,9 @@ ai-resume-builder/
 │   ├── server.js               starts Express and connects to MongoDB
 │   ├── config/                 database connection
 │   ├── models/                 User, Resume, AtsCheck (Mongoose)
-│   ├── middleware/             404 and error handler
-│   ├── controllers/, routes/   API code (added part by part)
+│   ├── middleware/             login checks (protect, adminOnly), 404 and error handler
+│   ├── controllers/, routes/   API code: auth, users (more added part by part)
+│   ├── utils/                  validators (same rules as the frontend)
 │   ├── seed/                   site configuration, if the server needs it (no fake data)
 │   └── scripts/                create-admin.js, check.js (tests)
 └── docs/screenshots/
@@ -174,7 +175,26 @@ Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
 | `npm run dev` | Start the server and restart it when a file changes (nodemon) |
 | `npm start` | Start the server |
 | `npm run create-admin` | Create the admin account, or make that email an admin if it already exists |
+| `npm run create-admin -- --reset-password` | Same, and also set that account's password to `ADMIN_PASSWORD` (if you forget it) |
 | `npm run check` | Test the running server and print PASS / FAIL for each test |
+
+### API
+
+Routes marked **login** need the header `Authorization: Bearer <token>` (the token comes from signup or
+login and is valid for 7 days). Errors always come back as `{ "message": "..." }`. The password is never
+sent back.
+
+| Method | URL | Access | Body | Returns |
+|---|---|---|---|---|
+| GET | `/api/health` | Public | | `{ ok, db }` |
+| POST | `/api/auth/signup` | Public | `{ name, email, password }` | `{ token, user }` (role is always `user`) |
+| POST | `/api/auth/login` | Public | `{ email, password }` | `{ token, user }` |
+| GET | `/api/auth/me` | Login | | `{ user }` |
+| PATCH | `/api/users/me` | Login | `{ name, email }` | `{ user }` |
+| PATCH | `/api/users/me/password` | Login | `{ currentPassword, newPassword }` | `{ message }` |
+
+Status codes: `400` invalid input or email already used, `401` not logged in / wrong email or password,
+`403` account blocked or not an admin, `404` unknown route.
 
 **No demo data.** The database starts empty: real users sign up and import their own resumes. The only
 account the backend creates is the admin from `.env`. `npm run check` makes temporary users
