@@ -421,7 +421,110 @@ async function runTests() {
     const login = await api('POST', '/api/auth/login', { email: owner.body.user.email, password })
     return removed.status === 200 && users === 0 && resumes === 0 && checks === 0 && login.status === 401
   })
+
+  // ---------- Part 4: AI ----------
+  console.log('\nAI')
+  const aiUser = await api('POST', '/api/auth/signup', { name: 'AI Tester', email: createTestEmail(), password })
+  const aiToken = aiUser.body.token
+  const aiPaths = ['bullets', 'summary', 'improve', 'tailor-summary', 'generate', 'job-insights'].map((name) => `/api/ai/${name}`)
+  const dataAnalystJob = 'Data Analyst (0-2 years). Build sales reports and dashboards. Skills: SQL, Excel, Power BI. Nice to have: Python.'
+
+  await test('Every AI route needs login (401 without a token)', async () => {
+    const results = await Promise.all(aiPaths.map((path) => api('POST', path, { text: 'x' })))
+    return results.every((result) => result.status === 401)
+  })
+
+  await test('Too-long input gives 400', async () => {
+    const { status } = await api('POST', '/api/ai/bullets', { text: 'a'.repeat(6001) }, aiToken)
+    return status === 400
+  })
+
+  await test('Too-long text inside an object gives 400', async () => {
+    const { status } = await api('POST', '/api/ai/summary', { profile: { degree: 'B.Tech', skills: ['x'.repeat(6001)] } }, aiToken)
+    return status === 400
+  })
+
+  await test('An invalid section gives 400', async () => {
+    const { status } = await api('POST', '/api/ai/improve', { section: 'hobbies', content: 'Chess' }, aiToken)
+    return status === 400
+  })
+
+  await test('Improve skills (plain code) cleans names and keeps the same type', async () => {
+    const { status, body } = await api('POST', '/api/ai/improve', { section: 'skills', content: ['reactjs', 'JS', 'React', 'SQL'], jobDescription: dataAnalystJob }, aiToken)
+    return status === 200 && JSON.stringify(body.value) === '["SQL","React","JavaScript"]' && isText(body.note)
+  })
+
+  if (!process.env.GEMINI_API_KEY) {
+    console.log('SKIPPED (no GEMINI_API_KEY): AI answer tests')
+    return
+  }
+
+  const factBullets = 'Worked on weekly sales reports in Excel\nMade a Power BI dashboard to track sales across 12 stores'
+  await test('Bullets: right shape, "12" kept and no new numbers (fact check)', async () => {
+    const { status, body } = await api('POST', '/api/ai/bullets', { text: factBullets, jobDescription: dataAnalystJob }, aiToken)
+    if (status !== 200 || !isTextList(body.bullets) || body.bullets.length === 0) return false
+    const numbersIn = new Set(factBullets.match(/\d+/g))
+    const numbersOut = body.bullets.join(' ').match(/\d+/g) || []
+    return numbersOut.includes('12') && numbersOut.every((number) => numbersIn.has(number))
+  })
+
+  const profile = { degree: 'B.Com', graduationYear: '2026', roleTitle: 'Data Analyst', skills: ['Excel', 'Power BI', 'SQL'], projects: [{ name: 'Sales dashboard', bullets: 'Made a Power BI dashboard for 12 stores' }] }
+  await test('Summary: returns { summary } text', async () => {
+    const { status, body } = await api('POST', '/api/ai/summary', { profile, jobDescription: dataAnalystJob }, aiToken)
+    return status === 200 && isText(body.summary) && body.summary.length > 20
+  })
+
+  await test('Improve summary: returns { value: text, note }', async () => {
+    const content = 'i am a commerce graduate. i know excel and power bi and sql and i made dashboards'
+    const { status, body } = await api('POST', '/api/ai/improve', { section: 'summary', content, jobDescription: dataAnalystJob }, aiToken)
+    return status === 200 && isText(body.value) && isText(body.note)
+  })
+
+  await test('Improve experience: same entries and ids, titles unchanged, only bullets rewritten', async () => {
+    const content = [
+      { id: 'exp-1', jobTitle: 'Data Intern', company: 'Retail Co', startDate: 'May 2026', endDate: 'Jul 2026', location: '', bullets: 'worked on weekly sales reports\nhelped with data entry' },
+      { id: 'exp-2', jobTitle: 'Volunteer', company: 'NGO', startDate: '', endDate: '', location: '', bullets: '' },
+    ]
+    const { status, body } = await api('POST', '/api/ai/improve', { section: 'experience', content, jobDescription: dataAnalystJob }, aiToken)
+    return status === 200 && body.value.length === 2 && body.value[0].id === 'exp-1' && body.value[0].jobTitle === 'Data Intern' &&
+      body.value[0].startDate === 'May 2026' && isText(body.value[0].bullets) && body.value[1].bullets === '' && isText(body.note)
+  })
+
+  await test('Tailor summary: returns { summary } text', async () => {
+    const resume = { roleTitle: 'Data Analyst', skills: ['Excel', 'SQL'], education: [{ degree: 'B.Com', endYear: '2026' }], projects: [], experience: [] }
+    const { status, body } = await api('POST', '/api/ai/tailor-summary', { resume, jobDescription: { text: dataAnalystJob } }, aiToken)
+    return status === 200 && isText(body.summary)
+  })
+
+  await test('Generate: returns the full draft shape with AI bullets', async () => {
+    const options = {
+      basics: {
+        fullName: 'AI Tester', email: 'tester@example.com', phone: '9820012345', location: 'Pune', degree: 'B.Com', institution: 'Sample College',
+        graduationYear: '2026', score: '8.1', skills: ['excel', 'powerbi', 'SQL'],
+        projects: [{ name: 'Sales dashboard', techStack: 'Power BI', link: '', bullets: 'made a dashboard for 12 stores' }],
+        experience: [{ jobTitle: 'Data Intern', company: 'Retail Co', location: '', startDate: 'May 2026', endDate: 'Jul 2026', bullets: 'worked on weekly sales reports' }],
+      },
+      company: { id: '', name: '', sectionOrder: ['summary', 'skills', 'projects', 'experience', 'education', 'certifications'] },
+      role: { id: 'data-analyst', title: 'Data Analyst' },
+      templateId: 'classic',
+      jobDescription: dataAnalystJob,
+      companyName: '',
+    }
+    const { status, body } = await api('POST', '/api/ai/generate', { options }, aiToken)
+    return status === 200 && body.title === 'Data Analyst' && isText(body.summary) && body.personal.fullName === 'AI Tester' &&
+      body.education[0].endYear === '2026' && body.projects[0].name === 'Sales dashboard' && /12/.test(body.projects[0].bullets) &&
+      isText(body.projects[0].id) && body.experience[0].jobTitle === 'Data Intern' && body.sectionOrder.length === 6 && Array.isArray(body.certifications)
+  })
+
+  await test('Job insights: returns jobTitle, skill lists, experienceLevel and 1–5 key points', async () => {
+    const { status, body } = await api('POST', '/api/ai/job-insights', { jobDescription: dataAnalystJob }, aiToken)
+    return status === 200 && isText(body.jobTitle) && isTextList(body.mustHaveSkills) && isTextList(body.niceToHaveSkills) &&
+      isText(body.experienceLevel) && isTextList(body.keyPoints) && body.keyPoints.length >= 1 && body.keyPoints.length <= 5
+  })
 }
+
+const isText = (value) => typeof value === 'string'
+const isTextList = (value) => Array.isArray(value) && value.every(isText)
 
 async function main() {
   // Tests talk to the server over HTTP; this database connection is only for setup and cleanup
