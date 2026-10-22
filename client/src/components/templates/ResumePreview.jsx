@@ -5,7 +5,7 @@ import TemplateRenderer from './TemplateRenderer'
 const PAGE_WIDTH = 794
 const PAGE_HEIGHT = 1123
 
-function ResumePreview({ resume, layout, printRef, showPageBreaks = false, maxScale = 1 }) {
+function ResumePreview({ resume, design, printRef, showPageBreaks = false, maxScale = 1 }) {
   const containerRef = useRef(null)
   const localPageRef = useRef(null)
   const pageRef = printRef || localPageRef
@@ -32,7 +32,7 @@ function ResumePreview({ resume, layout, printRef, showPageBreaks = false, maxSc
     <div ref={containerRef} className="w-full">
       <div className="relative mx-auto overflow-hidden bg-white shadow-paper" style={{ width: PAGE_WIDTH * scale, height: contentHeight * scale }}>
         <div style={{ width: PAGE_WIDTH, minHeight: PAGE_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-          <TemplateRenderer ref={pageRef} resume={resume} layout={layout} />
+          <TemplateRenderer ref={pageRef} resume={resume} design={design} />
         </div>
 
         {/* Page-break lines (screen only, not printed) */}

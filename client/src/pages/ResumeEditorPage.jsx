@@ -10,7 +10,7 @@ import { getResumeById } from '../services/resumeService'
 import { improveSection, BASIC_MODE_MESSAGE } from '../services/aiService'
 import { getJobText } from '../utils/jobDescription'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
-import { getTemplateLayout } from '../utils/resumeFormat'
+import { getTemplateDesign } from '../data/templateDesign'
 import { findResumeErrors } from '../utils/validation'
 import { SECTION_LABELS } from '../data/sections'
 import { PRINT_PAGE_STYLE, buildPdfFileName } from '../utils/pdf'
@@ -204,7 +204,7 @@ function ResumeEditorPage() {
 
       <EditorWorkspace
         resumeData={resumeData}
-        layout={getTemplateLayout(templates, resumeData.templateId)}
+        design={getTemplateDesign(templates, resumeData.templateId)}
         company={company}
         role={role}
         printRef={printRef}

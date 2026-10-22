@@ -5,7 +5,7 @@ import KeywordPanel from './KeywordPanel'
 import AtsScoreBox from './AtsScoreBox'
 import EditorSections from './EditorSections'
 
-function EditorWorkspace({ resumeData, layout, company, role, printRef, onAddSkill, onCheckAts, sectionProps }) {
+function EditorWorkspace({ resumeData, design, company, role, printRef, onAddSkill, onCheckAts, sectionProps }) {
   const [activeTab, setActiveTab] = useState('edit')
   const tabClasses = (tab) => `h-10 flex-1 rounded-md text-[15px] font-semibold ${activeTab === tab ? 'bg-navy text-white' : 'text-ink-soft'}`
 
@@ -26,7 +26,7 @@ function EditorWorkspace({ resumeData, layout, company, role, printRef, onAddSki
         {/* Live preview: gets resumeData as a prop, so it updates on every keystroke */}
         <div className={`${activeTab === 'preview' ? 'block' : 'hidden'} min-w-0 lg:block`}>
           <div className="rounded-lg bg-[#dfe3ea] p-3 sm:p-5 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:overflow-y-auto">
-            <ResumePreview resume={resumeData} layout={layout} printRef={printRef} showPageBreaks />
+            <ResumePreview resume={resumeData} design={design} printRef={printRef} showPageBreaks />
           </div>
         </div>
       </div>
