@@ -147,7 +147,7 @@ async function improveSection(section, content, jobDescription) {
 
 // Builds the first draft. Plain code does the structure; ONE Gemini request writes the summary and bullets.
 async function generateDraft(options) {
-  const { basics, company, role, templateId, jobDescription } = options
+  const { basics, company, role, templateId, sectionOrder, jobDescription } = options
   const companyName = isText(options.companyName) ? options.companyName : company.name || ''
   const job = jobText(jobDescription)
 
@@ -191,7 +191,8 @@ async function generateDraft(options) {
     roleId: role.id || '',
     roleTitle: role.title,
     templateId: templateId || 'classic',
-    sectionOrder: isTextList(company.sectionOrder) && company.sectionOrder.length ? [...company.sectionOrder] : DEFAULT_SECTION_ORDER,
+    // The chosen template's order, else the company's, else the default
+    sectionOrder: [sectionOrder, company.sectionOrder].find((order) => isTextList(order) && order.length) || DEFAULT_SECTION_ORDER,
     personal: {
       fullName: basics.fullName || '',
       email: basics.email || '',

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const toJSON = require('./toJSON')
 
-// A company profile: decides the recommended template, section order, emphasis and keywords.
+// A company profile: the emphasis, section order and keywords the keyword panel and ATS check use.
 // Added by the admin (there are no built-in companies).
 const companySchema = new mongoose.Schema(
   {
@@ -11,7 +11,6 @@ const companySchema = new mongoose.Schema(
     type: { type: String, default: 'Other' },
     industry: { type: String, default: '' },
     location: { type: String, default: '' },
-    preferredTemplate: { type: String, default: 'classic' },
     emphasis: { type: String, enum: ['projects', 'experience'], default: 'experience' },
     sectionOrder: { type: [String], default: ['summary', 'skills', 'experience', 'projects', 'education', 'certifications'] },
     keywords: { type: [String], default: [] },

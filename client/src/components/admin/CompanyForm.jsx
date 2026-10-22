@@ -15,14 +15,13 @@ const EMPHASIS_OPTIONS = [
   { value: 'experience', label: 'Experience before projects' },
 ]
 
-function CompanyForm({ company, templates, onSave, onCancel, isSaving }) {
+function CompanyForm({ company, onSave, onCancel, isSaving }) {
   // Lists are edited as comma-separated text
   const [formValues, setFormValues] = useState({
     name: company?.name || '',
     type: company?.type || 'Product-based',
     industry: company?.industry || '',
     location: company?.location || '',
-    preferredTemplate: company?.preferredTemplate || templates[0]?.id,
     emphasis: company?.emphasis || 'projects',
     sectionOrder: company?.sectionOrder || DEFAULT_SECTION_ORDER,
     keywordsText: listToText(company?.keywords),
@@ -60,7 +59,6 @@ function CompanyForm({ company, templates, onSave, onCancel, isSaving }) {
         <Select id="company-type" name="type" label="Company type" value={formValues.type} onChange={handleChange} options={COMPANY_TYPES} />
         <Input id="company-industry" name="industry" label="Industry" value={formValues.industry} onChange={handleChange} />
         <Input id="company-location" name="location" label="Location" value={formValues.location} onChange={handleChange} />
-        <Select id="company-template" name="preferredTemplate" label="Preferred template" value={formValues.preferredTemplate} onChange={handleChange} options={templates.map((template) => ({ value: template.id, label: template.name }))} />
         <Select id="company-emphasis" name="emphasis" label="Emphasis" value={formValues.emphasis} onChange={handleChange} options={EMPHASIS_OPTIONS} />
         <div className="sm:col-span-2">
           <SectionOrderEditor value={formValues.sectionOrder} onChange={(sectionOrder) => setFormValues({ ...formValues, sectionOrder })} />

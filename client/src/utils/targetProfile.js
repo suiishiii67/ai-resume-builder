@@ -8,7 +8,6 @@ export function buildCustomCompany(name) {
     name,
     type: 'Custom company',
     industry: 'Not specified',
-    preferredTemplate: 'classic',
     emphasis: 'experience',
     sectionOrder: DEFAULT_SECTION_ORDER,
     keywords: [],

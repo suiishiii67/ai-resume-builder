@@ -5,7 +5,7 @@ import CompanyInsight from './CompanyInsight'
 import JobInsights from '../JobInsights'
 import { guessJobTitle } from '../../utils/jobDescription'
 
-function StepTarget({ target, onTargetChange, companies, roles, errors, company, role, templateName }) {
+function StepTarget({ target, onTargetChange, companies, roles, errors, company, role }) {
   const companyOptions = companies.map((item) => ({ id: item.id, label: item.name, meta: item.type }))
   const roleOptions = roles.map((item) => ({ id: item.id, label: item.title, meta: item.category }))
   // Only show the company profile when a company from our list is picked
@@ -54,7 +54,7 @@ function StepTarget({ target, onTargetChange, companies, roles, errors, company,
         />
       </div>
 
-      {showInsight && <CompanyInsight company={company} role={role} templateName={templateName} />}
+      {showInsight && <CompanyInsight company={company} role={role} />}
     </div>
   )
 }
