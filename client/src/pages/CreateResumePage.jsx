@@ -7,6 +7,8 @@ import { useCatalog } from '../context/CatalogContext'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { resolveCompany, resolveRole } from '../utils/targetProfile'
+import { findRecommendedTemplate } from '../utils/recommendTemplate'
+import { withDesignDefaults } from '../data/templateDesign'
 import { validateRequiredFields, validateBasicsForm, validateEntry, hasErrors } from '../utils/validation'
 import { buildResumeDraft, generateResume, BASIC_MODE_MESSAGE } from '../services/aiService'
 import { findSkillsInText, buildJobDescription } from '../utils/jobDescription'
@@ -39,7 +41,7 @@ function CreateResumePage() {
 
   const [step, setStep] = useState(1)
   const [target, setTarget] = useState({ jobDescription: '', companyName: '', companyId: '', roleTitle: '', roleId: '' })
-  // '' = use the company's recommended template
+  // '' = use the template recommended from the user's job title and experience
   const [chosenTemplateId, setChosenTemplateId] = useState(searchParams.get('template') || '')
   const [basics, setBasics] = useState({ fullName: user.name, email: user.email, phone: '', location: '', degree: '', institution: '', graduationYear: '', score: '', skills: [], projects: [], experience: [] })
   const [errors, setErrors] = useState({})
@@ -52,14 +54,16 @@ function CreateResumePage() {
   // Worked out from the target
   const company = resolveCompany(companies, target.companyId, target.companyName)
   const role = resolveRole(roles, target.roleId, target.roleTitle)
-  const selectedTemplateId = chosenTemplateId || company.preferredTemplate
-  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId) || templates[0]
-  const recommendedIds = [...new Set([company.preferredTemplate, ...templates.filter((template) => template.roles.includes(role.id)).map((template) => template.id)])]
+  // Updates as the user types: a full-time job added in step 3 switches the suggestion to Professional
+  const recommendedTemplate = findRecommendedTemplate(templates, { role, experience: basics.experience })
+  const selectedTemplate = templates.find((template) => template.id === chosenTemplateId) || recommendedTemplate
+  // A new resume starts with the chosen template's section order
+  const sectionOrder = withDesignDefaults(selectedTemplate?.design).sectionOrder
 
   // The company the user typed ('' if none)
   const companyName = target.companyName.trim() ? company.name : ''
-  const previewResume = useMemo(() => buildResumeDraft({ basics, company, role, companyName, templateId: selectedTemplateId, jobDescription: target.jobDescription }), [basics, company, role, companyName, selectedTemplateId, target.jobDescription])
-  const draftOptions = { basics, company, role, companyName, templateId: selectedTemplate?.id, jobDescription: target.jobDescription }
+  const previewResume = useMemo(() => buildResumeDraft({ basics, company, role, companyName, templateId: selectedTemplate?.id, sectionOrder, jobDescription: target.jobDescription }), [basics, company, role, companyName, selectedTemplate?.id, sectionOrder, target.jobDescription])
+  const draftOptions = { basics, company, role, companyName, templateId: selectedTemplate?.id, sectionOrder, jobDescription: target.jobDescription }
 
   const handleNext = () => {
     if (step === 1) {
@@ -149,7 +153,7 @@ function CreateResumePage() {
   const jobSkillCount = findSkillsInText(target.jobDescription).length
   const generatingSteps = [
     jobSkillCount ? `Reading the job description: ${jobSkillCount} skills found` : 'No job description, using your details only',
-    `Ordering sections: ${company.sectionOrder.slice(0, 3).map((key) => SECTION_LABELS[key]).join(', ')}…`,
+    `Ordering sections: ${sectionOrder.slice(0, 3).map((key) => SECTION_LABELS[key]).join(', ')}…`,
     `Writing a summary from your degree, skills and best project`,
     `Turning your sentences into bullet points`,
     `Applying the ${selectedTemplate?.name} template`,
@@ -168,8 +172,8 @@ function CreateResumePage() {
       ) : (
         <>
           <WizardProgress currentStep={step} />
-          {step === 1 && <StepTarget target={target} onTargetChange={setTarget} companies={companies} roles={roles} errors={errors} company={company} role={role} templateName={templates.find((template) => template.id === company.preferredTemplate)?.name} />}
-          {step === 2 && <StepTemplate templates={templates} selectedTemplateId={selectedTemplate?.id} onSelect={setChosenTemplateId} recommendedIds={recommendedIds} previewResume={previewResume} companyName={company.name} />}
+          {step === 1 && <StepTarget target={target} onTargetChange={setTarget} companies={companies} roles={roles} errors={errors} company={company} role={role} />}
+          {step === 2 && <StepTemplate templates={templates} selectedTemplateId={selectedTemplate?.id} onSelect={setChosenTemplateId} recommendedId={recommendedTemplate?.id} previewResume={previewResume} />}
           {step === 3 && <StepBasics basics={basics} onChange={handleBasicsChange} onBlur={handleBasicsBlur} onFieldChange={handleBasicsFieldChange} errors={errors} role={role} showEntryErrors={showEntryErrors} />}
 
           <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">

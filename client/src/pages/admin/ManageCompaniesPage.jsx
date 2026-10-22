@@ -12,7 +12,7 @@ import DataTable from '../../components/admin/DataTable'
 import CompanyForm from '../../components/admin/CompanyForm'
 
 function ManageCompaniesPage() {
-  const { companies, templates, setCompanies } = useCatalog()
+  const { companies, setCompanies } = useCatalog()
   const { showToast } = useToast()
   // null = closed, {} = adding, object = editing
   const [editingCompany, setEditingCompany] = useState(null)
@@ -53,7 +53,6 @@ function ManageCompaniesPage() {
         </div>
       ),
     },
-    { key: 'preferredTemplate', label: 'Template', render: (company) => templates.find((template) => template.id === company.preferredTemplate)?.name || '–' },
     { key: 'emphasis', label: 'Emphasis', render: (company) => (company.emphasis === 'projects' ? 'Projects' : 'Experience') },
     { key: 'sectionOrder', label: 'Section order', render: (company) => <span className="text-sm">{company.sectionOrder.map((key) => SECTION_LABELS[key]).join(' → ')}</span> },
     { key: 'keywords', label: 'Keywords', render: (company) => <span className="text-sm">{company.keywords.join(', ')}</span> },
@@ -69,7 +68,7 @@ function ManageCompaniesPage() {
       <DataTable caption="Companies" columns={columns} rows={companies} onEdit={setEditingCompany} onDelete={setCompanyToDelete} getRowName={(company) => company.name} />
 
       {editingCompany && (
-        <CompanyForm company={editingCompany.id ? editingCompany : null} templates={templates} onSave={handleSave} onCancel={() => setEditingCompany(null)} isSaving={isSaving} />
+        <CompanyForm company={editingCompany.id ? editingCompany : null} onSave={handleSave} onCancel={() => setEditingCompany(null)} isSaving={isSaving} />
       )}
       {companyToDelete && (
         <ConfirmDialog

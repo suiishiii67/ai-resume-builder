@@ -1,32 +1,42 @@
-// Resume templates (site configuration) and which companies and roles they suit.
+// The three built-in templates (site configuration). Each one is a preset of the design settings.
+// The ids stay "modern", "classic" and "minimal" so resumes saved before keep working.
 // Loaded into MongoDB by: npm run seed-catalog
 const templates = [
   {
-    id: 'classic',
-    name: 'Classic',
-    layout: 'classic',
-    description: 'Serif type with ruled section headings. Conservative, formal and easy for any ATS to parse.',
-    companyTypes: ['Service-based', 'Consulting', 'Finance'],
-    industries: ['IT Services & Consulting', 'Management & Technology Consulting', 'Banking & Financial Services'],
-    roles: ['software-engineer', 'backend-developer', 'data-analyst'],
+    id: 'modern',
+    name: 'Tech',
+    description: "In the style of Jake's Resume: serif font, black headings with a line, centred name. Education first, then experience and projects.",
+    design: {
+      font: 'serif',
+      accentColor: '#000000',
+      headingStyle: 'caps-line',
+      spacing: 'compact',
+      sectionOrder: ['summary', 'education', 'experience', 'projects', 'skills', 'certifications'],
+    },
   },
   {
-    id: 'modern',
-    name: 'Modern',
-    layout: 'modern',
-    description: 'Clean sans-serif with a navy name band and skill tags. Suits product companies and startups.',
-    companyTypes: ['Product-based', 'Startup'],
-    industries: ['Technology (SaaS)', 'Consumer Tech'],
-    roles: ['frontend-developer', 'full-stack-developer', 'ui-ux-designer'],
+    id: 'classic',
+    name: 'Campus Placement',
+    description: 'For freshers: sans-serif with dark blue headings. Education with CGPA and 12th / 10th marks comes first, then projects and internships.',
+    design: {
+      font: 'sans',
+      accentColor: '#1e3a8a',
+      headingStyle: 'caps-line',
+      spacing: 'roomy',
+      sectionOrder: ['summary', 'education', 'projects', 'experience', 'skills', 'certifications'],
+    },
   },
   {
     id: 'minimal',
-    name: 'Minimal',
-    layout: 'minimal',
-    description: 'Compact, dense single column with small-caps headings. Fits more on one page without clutter.',
-    companyTypes: ['Finance', 'Product-based'],
-    industries: ['Banking & Financial Services', 'Technology (SaaS)'],
-    roles: ['data-analyst', 'software-engineer', 'backend-developer'],
+    name: 'Professional',
+    description: 'For people with work experience: summary and experience first, in black and dark grey only.',
+    design: {
+      font: 'calibri',
+      accentColor: '#333333',
+      headingStyle: 'bold',
+      spacing: 'roomy',
+      sectionOrder: ['summary', 'experience', 'skills', 'education', 'certifications', 'projects'],
+    },
   },
 ]
 
