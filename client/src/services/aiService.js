@@ -178,7 +178,7 @@ function basicJobInsights(jobDescription) {
 // Builds the resume right away from what the user typed (the wizard's live preview, the landing demo,
 // and basic mode for Generate).
 // companyName = the company the user typed ('' if none).
-export function buildResumeDraft({ basics, company, role, templateId, jobDescription = '', companyName = company.name }) {
+export function buildResumeDraft({ basics, company, role, templateId, sectionOrder = company.sectionOrder, jobDescription = '', companyName = company.name }) {
   const skills = sortSkillsByJob(standardiseSkills(basics.skills || []), jobDescription)
   const toEntry = (entry, prefix) => ({ ...entry, id: entry.id || createId(prefix), bullets: textToBullets(entry.bullets).join('\n') })
   const experience = (basics.experience || []).filter((entry) => entry.jobTitle?.trim() || entry.company?.trim()).map((entry) => toEntry(entry, 'exp'))
@@ -192,7 +192,7 @@ export function buildResumeDraft({ basics, company, role, templateId, jobDescrip
     roleId: role.id,
     roleTitle: role.title,
     templateId,
-    sectionOrder: [...company.sectionOrder],
+    sectionOrder: [...sectionOrder],
     personal: {
       fullName: basics.fullName,
       email: basics.email,

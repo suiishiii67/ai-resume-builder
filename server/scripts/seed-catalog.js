@@ -1,5 +1,6 @@
 // Adds the built-in roles and templates (site configuration) to MongoDB: npm run seed-catalog
-// Only adds the ones that are missing, so it is safe to run again. Never deletes anything.
+// Roles: only adds the missing ones. Templates: adds the missing ones and resets the three built-in
+// presets (name, description, design settings) to seed/templates.js. Safe to run again; never deletes anything.
 // Companies are not seeded: the admin adds real companies on the admin page.
 require('dotenv').config({ quiet: true })
 const mongoose = require('mongoose')
@@ -21,12 +22,27 @@ async function addMissing(Model, items) {
   return added
 }
 
+// Saves each built-in template's preset settings, and drops the old fields from before design settings.
+// Returns how many were added (the rest were updated).
+async function savePresets(items) {
+  let added = 0
+  for (const item of items) {
+    if (!(await Template.exists({ id: item.id }))) added++
+    await Template.updateOne(
+      { id: item.id },
+      { $set: item, $unset: { layout: '', companyTypes: '', industries: '', roles: '' } },
+      { upsert: true, strict: false }
+    )
+  }
+  return added
+}
+
 async function seedCatalog() {
   await connectDB()
   const addedRoles = await addMissing(Role, roles)
-  const addedTemplates = await addMissing(Template, templates)
+  const addedTemplates = await savePresets(templates)
   console.log(`Roles: ${addedRoles} added (${roles.length - addedRoles} already there)`)
-  console.log(`Templates: ${addedTemplates} added (${templates.length - addedTemplates} already there)`)
+  console.log(`Templates: ${addedTemplates} added, ${templates.length - addedTemplates} updated to their preset settings`)
 }
 
 seedCatalog()

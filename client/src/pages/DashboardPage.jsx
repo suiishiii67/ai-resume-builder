@@ -5,7 +5,7 @@ import { FilePlus2, FileText, SearchX, ScanSearch } from 'lucide-react'
 import { useResumes } from '../context/ResumeContext'
 import { useCatalog } from '../context/CatalogContext'
 import { useToast } from '../context/ToastContext'
-import { getTemplateLayout } from '../utils/resumeFormat'
+import { getTemplateDesign } from '../data/templateDesign'
 import { PRINT_PAGE_STYLE, buildPdfFileName } from '../utils/pdf'
 import PageHeader from '../components/PageHeader'
 import Button from '../components/Button'
@@ -131,7 +131,7 @@ function DashboardPage() {
                 <ResumeCard
                   key={resume.id}
                   resume={resume}
-                  layout={getTemplateLayout(templates, resume.templateId)}
+                  design={getTemplateDesign(templates, resume.templateId)}
                   templateName={getTemplateName(resume.templateId)}
                   onDuplicate={handleDuplicate}
                   onDownload={handleDownload}
@@ -157,7 +157,7 @@ function DashboardPage() {
       {isCreateOpen && <CreateResumeDialog onClose={() => setIsCreateOpen(false)} />}
       {resumeToTailor && <TailorDialog resume={resumeToTailor} onClose={() => setResumeToTailor(null)} />}
 
-      <PrintableResume resume={resumeToPrint} layout={resumeToPrint && getTemplateLayout(templates, resumeToPrint.templateId)} printRef={printRef} />
+      <PrintableResume resume={resumeToPrint} design={resumeToPrint && getTemplateDesign(templates, resumeToPrint.templateId)} printRef={printRef} />
     </>
   )
 }

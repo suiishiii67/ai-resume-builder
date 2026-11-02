@@ -24,14 +24,6 @@ export function hasSectionContent(resume, sectionKey) {
   return Boolean(value && value.trim())
 }
 
-// Template id -> layout. Deleted templates fall back to Classic.
-export function getTemplateLayout(templates, templateId) {
-  const template = templates.find((item) => item.id === templateId)
-  if (template) return template.layout
-  // Still loading: built-in ids match the layout names
-  return templates.length === 0 ? templateId : 'classic'
-}
-
 // "2 Oct 2026"
 export function formatDate(isoDate) {
   if (!isoDate) return ''

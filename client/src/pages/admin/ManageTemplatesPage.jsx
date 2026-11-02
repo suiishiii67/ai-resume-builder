@@ -9,9 +9,10 @@ import Button from '../../components/Button'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import DataTable from '../../components/admin/DataTable'
 import TemplateForm from '../../components/admin/TemplateForm'
+import { FONT_OPTIONS, HEADING_STYLE_OPTIONS, SPACING_OPTIONS, withDesignDefaults } from '../../data/templateDesign'
 
 function ManageTemplatesPage() {
-  const { templates, roles, setTemplates } = useCatalog()
+  const { templates, setTemplates } = useCatalog()
   const { showToast } = useToast()
   // null = closed, {} = adding, object = editing
   const [editingTemplate, setEditingTemplate] = useState(null)
@@ -49,35 +50,46 @@ function ManageTemplatesPage() {
     }
   }
 
-  const getRoleTitles = (roleIds) => roleIds.map((roleId) => roles.find((role) => role.id === roleId)?.title).filter(Boolean).join(', ')
+  const getLabel = (options, value) => options.find((option) => option.value === value)?.label.split(' (')[0] || value
 
   const columns = [
     { key: 'name', label: 'Template', render: (template) => <div><p className="font-semibold">{template.name}</p><p className="max-w-xs text-sm text-ink-faint">{template.description}</p></div> },
-    { key: 'layout', label: 'Layout', render: (template) => <span className="capitalize">{template.layout}</span> },
-    { key: 'companyTypes', label: 'Company types', render: (template) => <span className="text-sm">{template.companyTypes.join(', ')}</span> },
-    { key: 'roles', label: 'Roles', render: (template) => <span className="text-sm">{getRoleTitles(template.roles) || '–'}</span> },
+    { key: 'design', label: 'Design', render: (template) => <DesignSummary design={withDesignDefaults(template.design)} getLabel={getLabel} /> },
   ]
 
   return (
     <>
       <PageHeader
         title="Manage templates"
-        description="Templates reuse one of the three ATS-safe layouts and say which companies and roles they suit."
+        description="Each template is a set of ATS-safe design settings: font, accent colour, heading style, spacing and section order."
         actions={<Button onClick={() => setEditingTemplate({})}><Plus size={18} aria-hidden="true" /> Add template</Button>}
       />
       <DataTable caption="Templates" columns={columns} rows={templates} onEdit={setEditingTemplate} onDelete={handleDeleteRequest} getRowName={(template) => template.name} />
 
-      {editingTemplate && <TemplateForm template={editingTemplate.id ? editingTemplate : null} roles={roles} onSave={handleSave} onCancel={() => setEditingTemplate(null)} isSaving={isSaving} />}
+      {editingTemplate && <TemplateForm template={editingTemplate.id ? editingTemplate : null} onSave={handleSave} onCancel={() => setEditingTemplate(null)} isSaving={isSaving} />}
       {templateToDelete && (
         <ConfirmDialog
           title="Delete this template?"
-          message={`The ${templateToDelete.name} template will disappear from the gallery and wizard. Resumes using it switch to the Classic layout.`}
+          message={`The ${templateToDelete.name} template will disappear from the gallery and wizard. Resumes using it switch to the default design.`}
           confirmLabel="Delete template"
           onConfirm={handleDelete}
           onCancel={() => setTemplateToDelete(null)}
         />
       )}
     </>
+  )
+}
+
+// Font, accent colour swatch, heading style and spacing in one cell
+function DesignSummary({ design, getLabel }) {
+  return (
+    <div className="text-sm">
+      <p className="flex items-center gap-2">
+        <span className="inline-block size-3.5 rounded-sm border border-line-strong" style={{ backgroundColor: design.accentColor }} aria-hidden="true" />
+        {getLabel(FONT_OPTIONS, design.font)} · {design.accentColor}
+      </p>
+      <p className="text-ink-faint">{getLabel(HEADING_STYLE_OPTIONS, design.headingStyle)} · {getLabel(SPACING_OPTIONS, design.spacing)}</p>
+    </div>
   )
 }
 

@@ -11,6 +11,7 @@ const User = require('../models/User')
 const Resume = require('../models/Resume')
 const AtsCheck = require('../models/AtsCheck')
 const Company = require('../models/Company')
+const Template = require('../models/Template')
 
 const BASE_URL = `http://localhost:${process.env.PORT || 5001}`
 const TEST_EMAIL_PATTERN = /^check-.*@test\.local$/
@@ -18,6 +19,8 @@ const TEST_EMAIL_PATTERN = /^check-.*@test\.local$/
 const TEST_JOB_TITLE = `Check script ${crypto.randomBytes(4).toString('hex')}`
 // Companies made by the catalog tests start with this name, so cleanup can find them
 const TEST_COMPANY_NAME = `Check company ${crypto.randomBytes(4).toString('hex')}`
+// The same for templates
+const TEST_TEMPLATE_NAME = `Check template ${crypto.randomBytes(4).toString('hex')}`
 
 let passed = 0
 let failed = 0
@@ -66,6 +69,7 @@ async function cleanup() {
   await User.deleteMany({ _id: { $in: testUserIds } })
   await AtsCheck.deleteMany({ userId: null, jobTitle: TEST_JOB_TITLE })
   await Company.deleteMany({ name: { $regex: `^${TEST_COMPANY_NAME}` } })
+  await Template.deleteMany({ name: { $regex: `^${TEST_TEMPLATE_NAME}` } })
   await mongoose.disconnect()
   if (testUsers.length > 0) console.log(`\nCleaned up ${testUsers.length} test user(s).`)
 }
@@ -378,7 +382,8 @@ async function runTests() {
       body.totals.resumes > statsBefore.totals.resumes &&
       body.totals.atsChecks > statsBefore.totals.atsChecks &&
       body.totals.quickChecks > statsBefore.totals.quickChecks &&
-      body.topMissingSkills.some((row) => row.skill === 'TypeScript') &&
+      // Only the shape: real ATS checks in the database can push the test's skills out of the top 10
+      body.topMissingSkills.length > 0 && body.topMissingSkills.every((row) => typeof row.skill === 'string' && row.count > 0) &&
       body.topJobTitles.some((row) => row.jobTitle === 'Frontend Developer') &&
       body.latestResumes.length > 0 && body.latestResumes[0].ownerName !== ''
   })
@@ -433,7 +438,7 @@ async function runTests() {
   await test('The catalog is public and has the seeded roles and templates', async () => {
     const { status, body } = await api('GET', '/api/catalog')
     return status === 200 && Array.isArray(body.companies) && body.roles.some((role) => role.id === 'frontend-developer') &&
-      body.templates.some((template) => template.id === 'classic' && template.layout === 'classic')
+      body.templates.some((template) => template.id === 'classic' && template.design.font === 'sans')
   })
 
   await test('A normal user gets 403 on the catalog admin routes', async () => {
@@ -468,6 +473,69 @@ async function runTests() {
     const removed = await api('DELETE', `/api/admin/companies/${companyId}`, null, adminToken)
     const again = await api('DELETE', `/api/admin/companies/${companyId}`, null, adminToken)
     return removed.status === 200 && again.status === 404
+  })
+
+  // Template design settings
+  const validDesign = {
+    font: 'calibri',
+    accentColor: '#1e3a8a',
+    headingStyle: 'bold',
+    spacing: 'roomy',
+    sectionOrder: ['education', 'summary', 'skills', 'experience', 'projects', 'certifications'],
+  }
+  let templateId = ''
+
+  await test('Admin creates a template with valid design settings', async () => {
+    const { status, body } = await api('POST', '/api/admin/templates', { name: TEST_TEMPLATE_NAME, design: validDesign }, adminToken)
+    templateId = body.item && body.item.id
+    return status === 201 && body.item.design.font === 'calibri' && body.item.design.accentColor === '#1e3a8a' &&
+      body.item.design.sectionOrder[0] === 'education'
+  })
+
+  await test('Admin updates the template settings, and the public catalog shows the change', async () => {
+    const update = await api('PUT', `/api/admin/templates/${templateId}`, { design: { ...validDesign, font: 'serif', spacing: 'compact' } }, adminToken)
+    const catalog = await api('GET', '/api/catalog')
+    const saved = catalog.body.templates.find((template) => template.id === templateId)
+    return update.status === 200 && saved.design.font === 'serif' && saved.design.spacing === 'compact'
+  })
+
+  await test('A font that is not on the list is rejected (400)', async () => {
+    const { status } = await api('POST', '/api/admin/templates', { name: TEST_TEMPLATE_NAME, design: { ...validDesign, font: 'Comic Sans' } }, adminToken)
+    return status === 400
+  })
+
+  await test('An accent colour that is not a hex colour is rejected (400)', async () => {
+    const results = await Promise.all(['red', '#12345', '#gggggg', 'url(x)'].map((accentColor) =>
+      api('POST', '/api/admin/templates', { name: TEST_TEMPLATE_NAME, design: { ...validDesign, accentColor } }, adminToken)
+    ))
+    return results.every((result) => result.status === 400)
+  })
+
+  await test('A wrong heading style, spacing or section order is rejected (400)', async () => {
+    const badDesigns = [
+      { ...validDesign, headingStyle: 'underline' },
+      { ...validDesign, spacing: 'huge' },
+      { ...validDesign, sectionOrder: ['summary', 'skills'] }, // sections missing
+      { ...validDesign, sectionOrder: ['summary', 'summary', 'skills', 'experience', 'projects', 'education'] },
+    ]
+    const results = await Promise.all(badDesigns.map((design) => api('POST', '/api/admin/templates', { name: TEST_TEMPLATE_NAME, design }, adminToken)))
+    return results.every((result) => result.status === 400)
+  })
+
+  await test('An old template saved without design settings still loads, with the default settings', async () => {
+    // Saved straight to the database the old way: a layout and tags, no design
+    const oldId = `check-old-template-${crypto.randomBytes(3).toString('hex')}`
+    await Template.collection.insertOne({ id: oldId, name: `${TEST_TEMPLATE_NAME} old`, layout: 'modern', companyTypes: ['Startup'], createdAt: new Date() })
+    const catalog = await api('GET', '/api/catalog')
+    const old = catalog.body.templates.find((template) => template.id === oldId)
+    const update = await api('PUT', `/api/admin/templates/${oldId}`, { name: `${TEST_TEMPLATE_NAME} old renamed` }, adminToken)
+    return Boolean(old) && old.design.font === 'serif' && old.design.accentColor === '#000000' && old.design.sectionOrder.length === 6 &&
+      update.status === 200
+  })
+
+  await test('Admin deletes the test template', async () => {
+    const { status } = await api('DELETE', `/api/admin/templates/${templateId}`, null, adminToken)
+    return status === 200
   })
 
   await test('A resume can use any template id from the catalog', async () => {

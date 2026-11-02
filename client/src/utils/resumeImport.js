@@ -154,7 +154,8 @@ function parseProjects(lines) {
     return {
       id: createId('proj'),
       name,
-      techStack: techFromTitle.replace(/^(tech(nologies)?|stack)\s*:\s*/i, ''),
+      // A link printed on the same line is the project link, not part of the tech stack
+      techStack: techFromTitle.replace(/^(tech(nologies)?|stack)\s*:\s*/i, '').replace(/\s*(?:https?:\/\/)?[\w.-]+\.\w+\/\S+$/, '').trim(),
       link: linkLine ? linkLine.match(/(?:https?:\/\/)?[\w.-]+\.\w+\/\S+/)?.[0] || '' : '',
       // A second header line is usually a description, so keep it as a bullet
       bullets: [...headerLines.slice(1).filter((line) => line !== linkLine), ...bullets.filter((line) => line !== linkLine)].join('\n'),
@@ -174,7 +175,8 @@ function parseEducation(lines) {
     const years = text.match(YEAR_PATTERN) || []
     const degreeLine = entryLines.find((line) => DEGREE_PATTERN.test(line)) || entryLines[0]
     const institutionLine = entryLines.find((line) => line !== degreeLine && /college|university|institute|school|vidyalaya|academy|iit|nit/i.test(line)) || entryLines.find((line) => line !== degreeLine) || ''
-    const clean = (line) => line.replace(DATE_RANGE_PATTERN, '').replace(SCORE_PATTERN, '').replace(YEAR_PATTERN, '').replace(/[\s|,()–-]+$/, '').trim()
+    // Removes dates and scores; "(2023)" leaves "()", which goes too, but "Class XII (HSC)" keeps its bracket
+    const clean = (line) => line.replace(DATE_RANGE_PATTERN, '').replace(SCORE_PATTERN, '').replace(YEAR_PATTERN, '').replace(/\(\s*\)/g, '').replace(/[\s|,–-]+$/, '').trim()
     return {
       id: createId('edu'),
       degree: clean(degreeLine),

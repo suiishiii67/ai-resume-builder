@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { SECTION_LABELS } from '../../data/sections'
 import TagList from '../TagList'
 
-function CompanyInsight({ company, role, templateName }) {
+function CompanyInsight({ company, role }) {
   return (
     <section aria-label="What this target looks for" className="rounded-lg border border-line bg-paper p-5">
       <h2 className="text-lg font-bold">What {company.name} looks for</h2>
@@ -17,10 +17,6 @@ function CompanyInsight({ company, role, templateName }) {
         <div>
           <dt className="board-text text-[13px] text-ink-faint">Emphasis</dt>
           <dd className="font-semibold">{company.emphasis === 'projects' ? 'Projects before experience' : 'Experience before projects'}</dd>
-        </div>
-        <div>
-          <dt className="board-text text-[13px] text-ink-faint">Recommended template</dt>
-          <dd className="font-semibold">{templateName}</dd>
         </div>
         <div className="sm:col-span-2">
           <dt className="board-text text-[13px] text-ink-faint">Section order</dt>

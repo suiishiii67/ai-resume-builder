@@ -1,8 +1,8 @@
-// Up/down list to set a company's section order.
+// Up/down list to set a company's or template's section order.
 import { ArrowUp, ArrowDown } from 'lucide-react'
 import { SECTION_LABELS } from '../../data/sections'
 
-function SectionOrderEditor({ value, onChange }) {
+function SectionOrderEditor({ value, onChange, label = 'Section order' }) {
   // direction: -1 = up, +1 = down
   const moveSection = (index, direction) => {
     const newOrder = [...value]
@@ -14,7 +14,7 @@ function SectionOrderEditor({ value, onChange }) {
 
   return (
     <fieldset>
-      <legend className="mb-1.5 text-sm font-semibold">Section order</legend>
+      <legend className="mb-1.5 text-sm font-semibold">{label}</legend>
       <ol className="divide-y divide-line rounded-md border border-line-strong">
         {value.map((sectionKey, index) => (
           <li key={sectionKey} className="flex items-center gap-3 px-3 py-1.5">

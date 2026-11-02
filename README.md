@@ -44,7 +44,7 @@ on specific companies, industries, and job roles while improving ATS compatibili
 | **Resume editor** | Edit every section with a live A4 preview, a live match estimate, and the job's skills (green = in your resume, grey = missing; click one to add it). |
 | **ATS checker** | Score out of 100 with matched and missing skills, fixes ranked by importance with "Fix in editor" links, and a "How this score works" box. |
 | **Tailor for a new job** | Make a copy of any resume for a new job description. Matching skills move to the top, the summary is rewritten, and you tick only the missing skills you really have. The original stays unchanged. |
-| **Templates and PDF** | Classic, Modern and Minimal templates. Downloads a text-based PDF that ATS systems can read. |
+| **Templates and PDF** | Tech, Campus Placement and Professional templates, and more the admin can add. Downloads a text-based PDF that ATS systems can read. |
 | **Accounts and dashboard** | Sign up, log in, profile, and a dashboard of all your resumes (edit, duplicate, download, delete, search). |
 | **Admin** | Manage templates, sample companies and roles; see totals; reset the demo data. |
 | **Form validation** | Mobile numbers (+91, 10 digits), CGPA out of 10 or percentage with %, years, dates, links and passwords, with errors shown as you fill the form. |
@@ -104,6 +104,43 @@ server calls Google Gemini, so the API key never reaches the browser.
   `npm run pick-model` and `npm run set-models` (see "AI (Google Gemini)" below). The free tier has small
   daily limits per model (about 20 requests a day for some Flash models), so the backup adds capacity, and
   each user may make at most 30 AI requests per hour.
+
+## Templates
+
+A template is a set of design settings. The admin sets them on **Admin → Templates**, with a live preview
+of an example resume:
+
+| Setting | Choices |
+|---|---|
+| Font | Times New Roman (serif), Arial (sans-serif) or Calibri |
+| Accent colour | Any hex colour, used only for section headings and their lines. Body text stays black. |
+| Heading style | Capitals with a line (the name is centred), or bold with no line (the name is on the left) |
+| Spacing | Compact or roomy |
+| Default section order | The order a new resume starts with. Users can still reorder sections in the editor. |
+
+**Why only these choices.** Applicant tracking systems read the text of a PDF from top to bottom. Columns,
+tables, images, icons and text in odd fonts can come out jumbled or be skipped. So every template is one
+column of real, selectable text on an A4 page, and the bullets are real "•" characters. The admin cannot
+change this; the server rejects any font, heading style or spacing not on the list, and any colour that is
+not a hex colour like `#1e3a8a`.
+
+**Built-in presets** (`npm run seed-catalog`; the ids stay the same, so older resumes keep working):
+
+| Template | Settings |
+|---|---|
+| Tech (`modern`) | In the style of Jake's Resume: serif, black headings with a line, centred name. Education, experience, projects, skills. |
+| Campus Placement (`classic`) | Sans-serif, dark blue headings with a line. Education first (CGPA, then 12th and 10th as plain lines), then projects, internships, skills, certifications. |
+| Professional (`minimal`) | Calibri, black and dark grey only. Summary, experience, skills, education, certifications. |
+
+**How a template is recommended.** From the user, not the company: companies don't need a special
+design, and what changes per company (skills, summary) is handled by the pasted job description and
+"Tailor for a new job". In the create wizard (and on import) the suggestion is:
+
+1. **Tech** if the job title is a tech role (an Engineering or Data role, or a title such as "developer" or "engineer");
+2. otherwise **Professional** if the user has full-time work experience (a job that is not an internship);
+3. otherwise **Campus Placement** (a fresher).
+
+The user can always pick another template, in the wizard or later in the editor.
 
 ## Tech stack
 
@@ -212,7 +249,7 @@ Port 5001 is used because macOS uses port 5000 for AirPlay Receiver.
 | `npm run dev` | Start the server and restart it when a file changes (nodemon) |
 | `npm start` | Start the server |
 | `npm run create-admin` | Create the admin account, or make that email an admin if it already exists |
-| `npm run seed-catalog` | Add the built-in roles and templates (only the missing ones; never deletes) |
+| `npm run seed-catalog` | Add the missing built-in roles and templates, and reset the 3 built-in templates to their preset settings (never deletes) |
 | `npm run create-admin -- --reset-password` | Same, and also set that account's password to `ADMIN_PASSWORD` (if you forget it) |
 | `npm run check` | Test the running server and print PASS / FAIL for each test |
 | `npm run check -- --ai` | Same, plus the AI answer tests (about 7 real Gemini requests, so use it sparingly) |

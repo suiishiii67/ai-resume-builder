@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ClipboardPaste, ArrowLeft, ArrowRight } from 'lucide-react'
 import { useCatalog } from '../context/CatalogContext'
+import { findRecommendedTemplate } from '../utils/recommendTemplate'
 import { useResumes } from '../context/ResumeContext'
 import { useToast } from '../context/ToastContext'
 import { readResumeFile, parseResumeText, countImportedFields, MIN_TEXT_LENGTH } from '../utils/resumeImport'
@@ -37,7 +38,7 @@ const REVIEW_SECTIONS = [
 ]
 
 function ImportResumePage() {
-  const { companies, roles } = useCatalog()
+  const { companies, roles, templates } = useCatalog()
   const { createResume } = useResumes()
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -101,13 +102,16 @@ function ImportResumePage() {
     const company = target.companyName.trim() ? resolveCompany(companies, target.companyId, target.companyName) : null
     const role = target.roleTitle.trim() ? resolveRole(roles, target.roleId, target.roleTitle) : null
     const title = [company?.name, role?.title].filter(Boolean).join(' – ') || `${draft.personal.fullName || 'My'} resume`.trim()
+    const template = findRecommendedTemplate(templates, { role, experience: draft.experience })
 
     setIsSaving(true)
     try {
       const newResume = await createResume({
         ...draft,
         title,
-        templateId: company && !company.isCustom ? company.preferredTemplate : draft.templateId,
+        // Recommended from the user's job title and experience; starts with that template's section order
+        templateId: template?.id || draft.templateId,
+        sectionOrder: template?.design?.sectionOrder || draft.sectionOrder,
         companyId: company?.id || '',
         companyName: company?.name || '',
         roleId: role?.id || '',

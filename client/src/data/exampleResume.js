@@ -54,6 +54,8 @@ const exampleResume = {
       endYear: '2027',
       score: 'CGPA 8.6 / 10',
     },
+    { id: 'edu-2', degree: 'Class XII (HSC)', institution: 'Sunrise Junior College (example)', location: 'Mumbai', startYear: '', endYear: '2023', score: '88.4%' },
+    { id: 'edu-3', degree: 'Class X (SSC)', institution: 'Sunrise High School (example)', location: 'Mumbai', startYear: '', endYear: '2021', score: '92.6%' },
   ],
   projects: [
     {

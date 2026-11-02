@@ -6,7 +6,7 @@ import StatusStamp from './StatusStamp'
 import { getScoreBand } from '../utils/scoreBand'
 import { formatDate } from '../utils/resumeFormat'
 
-function ResumeCard({ resume, layout, templateName, onDuplicate, onDownload, onDelete, onTailor }) {
+function ResumeCard({ resume, design, templateName, onDuplicate, onDownload, onDelete, onTailor }) {
   const hasScore = typeof resume.atsScore === 'number'
 
   const actionClasses = 'inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ink-soft hover:bg-ink/5 hover:text-ink'
@@ -14,7 +14,7 @@ function ResumeCard({ resume, layout, templateName, onDuplicate, onDownload, onD
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-line bg-paper shadow-panel">
       <Link to={`/editor/${resume.id}`} aria-label={`Edit ${resume.title}`} className="relative block h-52 overflow-hidden border-b border-line bg-ground px-6 pt-4">
-        <ResumePreview resume={resume} layout={layout} maxScale={0.45} />
+        <ResumePreview resume={resume} design={design} maxScale={0.45} />
         <span className="absolute top-3 right-3">
           {hasScore ? (
             <StatusStamp tone={getScoreBand(resume.atsScore).tone} className="bg-paper">Match {resume.atsScore}</StatusStamp>

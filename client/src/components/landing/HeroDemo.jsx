@@ -4,6 +4,8 @@ import { useCatalog } from '../../context/CatalogContext'
 import { buildResumeDraft } from '../../services/aiService'
 import { resumeToText, containsKeyword } from '../../utils/keywordUtils'
 import { getTargetKeywords } from '../../utils/targetProfile'
+import { findRecommendedTemplate } from '../../utils/recommendTemplate'
+import { withDesignDefaults } from '../../data/templateDesign'
 import exampleCompanies from '../../data/exampleCompanies'
 import { SECTION_LABELS } from '../../data/sections'
 import TargetStrip from '../TargetStrip'
@@ -54,8 +56,8 @@ function HeroDemo() {
   const demo = useMemo(() => {
     if (!activeTarget) return null
     const { company, role } = activeTarget
-    const template = templates.find((item) => item.id === company.preferredTemplate) || templates[0]
-    const draft = buildResumeDraft({ basics: DEMO_BASICS, company, role, templateId: template?.id })
+    const template = findRecommendedTemplate(templates, { role, experience: DEMO_BASICS.experience })
+    const draft = buildResumeDraft({ basics: DEMO_BASICS, company, role, templateId: template?.id, sectionOrder: withDesignDefaults(template?.design).sectionOrder })
     const resumeText = resumeToText(draft)
     const keywords = getTargetKeywords(company, role)
       .filter((keyword) => keyword.type === 'keyword')
@@ -97,7 +99,7 @@ function HeroDemo() {
 
       <div className="mt-3 grid gap-4 sm:grid-cols-[1fr_190px]">
         <div className="relative max-h-[430px] overflow-hidden rounded bg-ground p-3">
-          <ResumePreview key={demo.company.id} resume={demo.draft} layout={demo.template?.layout} maxScale={0.62} />
+          <ResumePreview key={demo.company.id} resume={demo.draft} design={demo.template?.design} maxScale={0.62} />
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ground to-transparent" />
         </div>
 

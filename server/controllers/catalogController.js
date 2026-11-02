@@ -4,12 +4,14 @@ const Company = require('../models/Company')
 const Role = require('../models/Role')
 const Template = require('../models/Template')
 
+const { FONTS, HEADING_STYLES, SPACINGS, SECTIONS, HEX_COLOUR } = Template.DESIGN_OPTIONS
+
 const KINDS = {
   companies: {
     Model: Company,
     nameField: 'name',
     label: 'Company',
-    fields: ['name', 'type', 'industry', 'location', 'preferredTemplate', 'emphasis', 'sectionOrder', 'keywords', 'focus', 'summaryLine'],
+    fields: ['name', 'type', 'industry', 'location', 'emphasis', 'sectionOrder', 'keywords', 'focus', 'summaryLine'],
   },
   roles: {
     Model: Role,
@@ -21,7 +23,8 @@ const KINDS = {
     Model: Template,
     nameField: 'name',
     label: 'Template',
-    fields: ['name', 'layout', 'description', 'companyTypes', 'industries', 'roles'],
+    fields: ['name', 'description', 'design'],
+    checkExtra: checkDesign,
   },
 }
 
@@ -44,6 +47,22 @@ function isTooBig(value) {
   if (Array.isArray(value)) return value.length > MAX_LIST || value.some(isTooBig)
   if (value && typeof value === 'object') return Object.values(value).some(isTooBig)
   return false
+}
+
+// A template's design settings: only the ATS-safe choices in models/Template.js are allowed
+function checkDesign({ design }) {
+  if (design === undefined) return ''
+  if (!design || typeof design !== 'object' || Array.isArray(design)) return 'Send the design settings as an object.'
+  if (!FONTS.includes(design.font)) return `Font must be one of: ${FONTS.join(', ')}.`
+  if (typeof design.accentColor !== 'string' || !HEX_COLOUR.test(design.accentColor)) return 'Accent colour must be a hex colour like #1e3a8a.'
+  if (!HEADING_STYLES.includes(design.headingStyle)) return `Heading style must be one of: ${HEADING_STYLES.join(', ')}.`
+  if (!SPACINGS.includes(design.spacing)) return `Spacing must be one of: ${SPACINGS.join(', ')}.`
+  // Every section exactly once, so no content is ever hidden
+  const order = design.sectionOrder
+  if (!Array.isArray(order) || order.length !== SECTIONS.length || !SECTIONS.every((section) => order.includes(section))) {
+    return `Section order must list each section once: ${SECTIONS.join(', ')}.`
+  }
+  return ''
 }
 
 // Returns an error message, or '' when the fields are fine
@@ -77,10 +96,10 @@ async function getCatalog(req, res) {
 
 // POST /api/admin/<kind>  →  { item }
 function createItem(kind) {
-  const { Model, nameField, fields } = KINDS[kind]
+  const { Model, nameField, fields, checkExtra } = KINDS[kind]
   return async (req, res) => {
     const values = pickFields(req.body || {}, fields)
-    const error = checkFields(values, nameField, true)
+    const error = checkFields(values, nameField, true) || (checkExtra ? checkExtra(values) : '')
     if (error) return res.status(400).json({ message: error })
 
     const id = await createReadableId(Model, values[nameField])
@@ -91,13 +110,13 @@ function createItem(kind) {
 
 // PUT /api/admin/<kind>/:id  →  { item }
 function updateItem(kind) {
-  const { Model, nameField, fields, label } = KINDS[kind]
+  const { Model, nameField, fields, label, checkExtra } = KINDS[kind]
   return async (req, res) => {
     const item = await Model.findOne({ id: String(req.params.id) })
     if (!item) return res.status(404).json({ message: `${label} not found` })
 
     const values = pickFields(req.body || {}, fields)
-    const error = checkFields(values, nameField, false)
+    const error = checkFields(values, nameField, false) || (checkExtra ? checkExtra(values) : '')
     if (error) return res.status(400).json({ message: error })
 
     item.set(values)
