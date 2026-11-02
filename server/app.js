@@ -15,8 +15,11 @@ const catalogRoutes = require('./routes/catalogRoutes')
 
 const app = express()
 
-// Only our React app (CLIENT_URL) may call this API from the browser
-app.use(cors({ origin: process.env.CLIENT_URL }))
+// Only our React app (CLIENT_URL) may call this API from the browser.
+// In development the Vite dev server on localhost is allowed too.
+const allowedOrigins = [process.env.CLIENT_URL]
+if (process.env.NODE_ENV !== 'production') allowedOrigins.push('http://localhost:5173')
+app.use(cors({ origin: allowedOrigins }))
 
 // Read JSON bodies (2mb is plenty for a resume)
 app.use(express.json({ limit: '2mb' }))
