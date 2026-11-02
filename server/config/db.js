@@ -7,7 +7,8 @@ let connection = null
 function connectDB() {
   if (!connection) {
     connection = mongoose
-      .connect(process.env.MONGO_URI)
+      // Give up after 5 seconds instead of 30, so a database problem shows up quickly
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
       .then(() => console.log(`MongoDB connected: ${mongoose.connection.name}`))
       .catch((error) => {
         // Forget the failed attempt so the next request tries again

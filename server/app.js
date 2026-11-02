@@ -24,8 +24,14 @@ app.use(cors({ origin: allowedOrigins }))
 // Read JSON bodies (2mb is plenty for a resume)
 app.use(express.json({ limit: '2mb' }))
 
-// Quick way to see that the server and database are working
-app.get('/api/health', (req, res) => {
+// Quick way to see that the server and database are working.
+// It tries to connect first, so a fresh Vercel instance reports the real database status.
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB()
+  } catch {
+    // Not connected: the answer below says "disconnected"
+  }
   const isConnected = mongoose.connection.readyState === 1
   res.json({ ok: true, db: isConnected ? 'connected' : 'disconnected' })
 })
