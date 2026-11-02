@@ -168,7 +168,10 @@ ai-resume-builder/
 │       ├── data/               skillsList, sections, the example resume and companies used only for previews
 │       └── context/            logged-in user, resumes, catalog, toasts
 ├── server/                     Express + MongoDB backend (Phase 2, in progress)
-│   ├── server.js               starts Express and connects to MongoDB
+│   ├── app.js                  Express setup: middleware and routes
+│   ├── server.js               runs app.js on your laptop (connects to MongoDB, then listens)
+│   ├── api/index.js            runs app.js on Vercel
+│   ├── vercel.json             sends every request to api/index.js
 │   ├── config/                 database connection
 │   ├── models/                 User, Resume, AtsCheck, Company, Role, Template (Mongoose)
 │   ├── middleware/             login checks (protect, adminOnly), 404 and error handler
@@ -214,12 +217,31 @@ another address, copy `client/.env.example` to `client/.env` and change `VITE_AP
 
 ### Deploy on Vercel
 
-Import the GitHub repo in Vercel, set **Root Directory** to `client`, and deploy. Vercel detects Vite
-automatically; `client/vercel.json` makes links like `/dashboard` work when the page is refreshed.
+The site is two Vercel projects made from the same GitHub repo: one for `server` (the API) and one for
+`client` (the website). The database is a free MongoDB Atlas cluster, because Vercel cannot reach a
+MongoDB running on your laptop.
+
+1. **Database.** On [MongoDB Atlas](https://www.mongodb.com/atlas), create a free cluster and a database
+   user. Under *Network Access*, allow `0.0.0.0/0` (Vercel has no fixed IP address). Copy the connection
+   string and add the database name before the `?`, e.g. `...mongodb.net/ai-resume-builder?retryWrites=true`.
+2. **Fill the database.** In `server/.env`, set `MONGO_URI` to the Atlas string for a moment, run
+   `npm run create-admin` and `npm run seed-catalog`, then set it back to your local address.
+3. **API.** In Vercel, *Add New → Project*, import the repo, set **Root Directory** to `server` and add
+   the environment variables from `server/.env.example` (Atlas `MONGO_URI`, a new long `JWT_SECRET`,
+   the `GEMINI_` values; `PORT` and `ADMIN_` are not needed). Deploy, then open
+   `https://<api-project>.vercel.app/api/health`: it should show `"db":"connected"`.
+4. **Website.** Import the repo again, set **Root Directory** to `client` and add
+   `VITE_API_URL=https://<api-project>.vercel.app/api`. Vercel detects Vite; `client/vercel.json` makes
+   links like `/dashboard` work when the page is refreshed.
+5. **Connect them.** In the API project, set `CLIENT_URL` to the website address
+   (`https://<client-project>.vercel.app`, no `/` at the end) and redeploy, so the API accepts its requests.
+
+After this, every push to `main` updates both projects.
 
 ## Backend
 
-The backend runs only on your laptop. Requirements: Node.js 20+ and MongoDB Community Server.
+These steps run the backend on your laptop (to put it online, see *Deploy on Vercel*). Requirements:
+Node.js 20+ and MongoDB Community Server.
 
 ```bash
 # 1. Start MongoDB (macOS with Homebrew; on Windows it runs as a service after install)
